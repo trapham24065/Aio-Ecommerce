@@ -4,7 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
+use App\Models\Supplier;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -55,15 +58,45 @@ class ProductResource extends Resource
 
                     Section::make('Associations')->schema([
                         Select::make('category_id')
-                            ->relationship('category', 'name')
                             ->searchable()
+                            ->options(fn() => Category::limit(15)->pluck('name', 'id'))
+                            ->getSearchResultsUsing(function (string $search): array {
+                                return Category::where('name', 'like', "%{$search}%")
+                                    ->limit(50)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(function ($value): ?string {
+                                return Category::find($value)?->name;
+                            })
                             ->required(),
                         Select::make('brand_id')
-                            ->relationship('brand', 'name')
-                            ->searchable(),
+                            ->searchable()
+                            ->options(fn() => Brand::limit(15)->pluck('name', 'id'))
+                            ->getSearchResultsUsing(function (string $search): array {
+                                return Brand::where('name', 'like', "%{$search}%")
+                                    ->limit(50)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(function ($value): ?string {
+                                return Brand::find($value)?->name;
+                            })
+                            ->required(),
+
                         Select::make('supplier_id')
-                            ->relationship('supplier', 'name')
-                            ->searchable(),
+                            ->searchable()
+                            ->options(fn() => Supplier::limit(15)->pluck('name', 'id'))
+                            ->getSearchResultsUsing(function (string $search): array {
+                                return Supplier::where('name', 'like', "%{$search}%")
+                                    ->limit(50)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(function ($value): ?string {
+                                return Supplier::find($value)?->name;
+                            })
+                            ->required(),
                     ]),
 
                     Section::make('Status')->schema([

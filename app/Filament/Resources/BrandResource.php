@@ -9,12 +9,15 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class BrandResource extends Resource
 {
+
     protected static ?string $model = Brand::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -31,7 +34,10 @@ class BrandResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('id')->searchable(),
+                TextColumn::make('code')->searchable(),
+                TextColumn::make('name')->searchable(),
+                IconColumn::make('status')->boolean()->label('Active'),
             ])
             ->filters([
                 //
@@ -56,9 +62,10 @@ class BrandResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListBrands::route('/'),
+            'index'  => Pages\ListBrands::route('/'),
             'create' => Pages\CreateBrand::route('/create'),
-            'edit' => Pages\EditBrand::route('/{record}/edit'),
+            'edit'   => Pages\EditBrand::route('/{record}/edit'),
         ];
     }
+
 }
