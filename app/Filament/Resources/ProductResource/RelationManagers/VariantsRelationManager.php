@@ -32,11 +32,13 @@ class VariantsRelationManager extends RelationManager
             TextInput::make('price')
                 ->required()
                 ->numeric()
-                ->prefix('đ'),
+                ->prefix('đ')
+                ->minValue(1),
             TextInput::make('quantity')
                 ->required()
                 ->numeric()
-                ->default(0),
+                ->default(0)
+                ->minValue(1),
         ];
 
         foreach ($product->options as $option) {

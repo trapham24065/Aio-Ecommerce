@@ -41,7 +41,8 @@ class ImagesRelationManager extends RelationManager
 
                 TextInput::make('position')
                     ->numeric()
-                    ->default(0),
+                    ->default(0)
+                    ->minValue(0),
             ]);
     }
 

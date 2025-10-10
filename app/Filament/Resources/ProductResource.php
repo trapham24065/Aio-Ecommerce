@@ -12,6 +12,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -25,6 +26,9 @@ use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Str;
+use Filament\Forms\Set;
+use Filament\Tables\Filters\Filter;
 
 class ProductResource extends Resource
 {
@@ -39,10 +43,21 @@ class ProductResource extends Resource
             ->schema([
                 Group::make()->schema([
                     Section::make('Product Information')->schema([
-                        TextInput::make('name')->required(),
+                        TextInput::make('name')
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn(Set $set, ?string $state) => $set('seo.slug', Str::slug($state))),
                         TextInput::make('sku')->required()->unique(ignoreRecord: true),
                         MarkdownEditor::make('description')->columnSpanFull(),
                     ])->columns(2),
+
+                    Section::make('SEO')
+                        ->relationship('seo')
+                        ->schema([
+                            TextInput::make('slug')->required()->unique(ignoreRecord: true),
+                            TextInput::make('meta_title'),
+                            TextInput::make('meta_description'),
+                        ]),
 
                     Section::make('Images')->schema([
                         FileUpload::make('thumbnail')->image()->directory('products'),
@@ -52,8 +67,8 @@ class ProductResource extends Resource
 
                 Group::make()->schema([
                     Section::make('Pricing & Stock')->schema([
-                        TextInput::make('base_cost')->numeric()->prefix('đ'),
-                        TextInput::make('quantity')->numeric()->default(1),
+                        TextInput::make('base_cost')->numeric()->prefix('đ')->minValue(1),
+                        TextInput::make('quantity')->numeric()->integer()->default(1)->minValue(1),
                     ]),
 
                     Section::make('Associations')->schema([
@@ -118,7 +133,17 @@ class ProductResource extends Resource
                 IconColumn::make('status')->boolean()->label('Active'),
             ])
             ->filters([
-                //
+                TernaryFilter::make('status')
+                    ->label('Status')
+                    ->boolean()
+                    ->trueLabel('Active Products')
+                    ->falseLabel('Inactive Products')
+                    ->native(false),
+
+                Filter::make('low_stock')
+                    ->label('Low Stock')
+                    ->query(fn(Builder $query): Builder => $query->where('quantity', '<=', 5))
+                    ->indicator('Low Stock'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
