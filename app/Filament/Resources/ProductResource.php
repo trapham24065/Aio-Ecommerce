@@ -15,7 +15,6 @@ use Filament\Tables;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\MarkdownEditor;
@@ -29,6 +28,8 @@ use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Str;
 use Filament\Forms\Set;
 use Filament\Tables\Filters\Filter;
+use Illuminate\Validation\Rule;
+use Filament\Forms\Get;
 
 class ProductResource extends Resource
 {
@@ -46,7 +47,20 @@ class ProductResource extends Resource
                         TextInput::make('name')
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn(Set $set, ?string $state) => $set('seo.slug', Str::slug($state))),
+                            ->afterStateUpdated(
+                                fn(Set $set, ?string $state) => $set(
+                                    'seo.slug',
+                                    preg_replace('/[^a-z0-9]+/i', '-', strtolower(trim($state)))
+                                )
+                            )
+                            ->unique(
+                                ignoreRecord: true,
+                                modifyRuleUsing: function (Rule $rule, Get $get) {
+                                    return $rule
+                                        ->where('category_id', $get('category_id'));
+                                }
+                            ),
+
                         TextInput::make('sku')->required()->unique(ignoreRecord: true),
                         MarkdownEditor::make('description')->columnSpanFull(),
                     ])->columns(2),
@@ -60,7 +74,13 @@ class ProductResource extends Resource
                         ]),
 
                     Section::make('Images')->schema([
-                        FileUpload::make('thumbnail')->image()->directory('products'),
+                        FileUpload::make('thumbnail')
+                            ->image()
+                            ->directory('products')
+                            ->required()
+                            ->maxSize(2048)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif'])
+                            ->helperText('Upload a JPG, PNG, or GIF image. Maximum size 2MB.'),
                     ]),
 
                 ])->columnSpan(['lg' => 2]),
@@ -84,7 +104,8 @@ class ProductResource extends Resource
                             ->getOptionLabelUsing(function ($value): ?string {
                                 return Category::find($value)?->name;
                             })
-                            ->required(),
+                            ->required()
+                            ->live(),
                         Select::make('brand_id')
                             ->searchable()
                             ->options(fn() => Brand::limit(15)->pluck('name', 'id'))
@@ -167,9 +188,9 @@ class ProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListProducts::route('/'),
+            'index' => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
-            'edit'   => Pages\EditProduct::route('/{record}/edit'),
+            'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
 
