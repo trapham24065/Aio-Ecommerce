@@ -48,21 +48,37 @@ class ProductResource extends Resource
                         TextInput::make('name')
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (Set $set, ?string $state) {
-                                if ($state) {
-                                    $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', '', $state);
+                            ->maxLength(100)
+                            ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                                if (!$state) {
+                                    return;
+                                }
 
-                                    $set('seo.slug', Str::slug($sanitized));
+                                $sanitizedForSlug = preg_replace('/[^\p{L}\p{N}\s]/u', '', $state);
+                                $slug = Str::slug($sanitizedForSlug);
+                                $limitedSlug = trim(Str::limit($slug, 60, ''), '-');
+                                $set('seo.slug', $limitedSlug);
+
+                                $categoryCode = Category::find($get('category_id'))?->code;
+                                if ($categoryCode) {
+                                    $productSlugPart = Str::slug($state);
+                                    $limitedProductSlugPart = trim(Str::limit($productSlugPart, 150, ''), '-');
+                                    $sku = Str::upper($categoryCode.'-'.$limitedProductSlugPart);
+                                    $set('sku', $sku);
                                 }
                             })
                             ->unique(
                                 ignoreRecord: true,
                                 modifyRuleUsing: function (Unique $rule, Get $get) {
-                                    return $rule
-                                        ->where('category_id', $get('category_id'));
+                                    return $rule->where('category_id', $get('category_id'));
                                 }
                             ),
-                        TextInput::make('sku')->required()->unique(ignoreRecord: true),
+                        TextInput::make('sku')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->disabled()
+                            ->dehydrated(),
+
                         MarkdownEditor::make('description')->columnSpanFull(),
                     ])->columns(2),
 
