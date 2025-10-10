@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Validation\Rules\Unique;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
@@ -9,7 +10,6 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -29,7 +29,6 @@ use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Str;
 use Filament\Forms\Set;
 use Filament\Tables\Filters\Filter;
-use Illuminate\Validation\Rule;
 use Filament\Forms\Get;
 
 class ProductResource extends Resource
@@ -47,8 +46,8 @@ class ProductResource extends Resource
                     Section::make('Product Information')->schema([
                         TextInput::make('name')
                             ->required()
-                            ->live(onBlur: true)
                             ->maxLength(100)
+                            ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
                                 if (!$state) {
                                     return;
@@ -59,13 +58,7 @@ class ProductResource extends Resource
                                 $limitedSlug = trim(Str::limit($slug, 60, ''), '-');
                                 $set('seo.slug', $limitedSlug);
 
-                                $categoryCode = Category::find($get('category_id'))?->code;
-                                if ($categoryCode) {
-                                    $productSlugPart = Str::slug($state);
-                                    $limitedProductSlugPart = trim(Str::limit($productSlugPart, 150, ''), '-');
-                                    $sku = Str::upper($categoryCode.'-'.$limitedProductSlugPart);
-                                    $set('sku', $sku);
-                                }
+                                self::generateSku($get, $set);
                             })
                             ->unique(
                                 ignoreRecord: true,
@@ -109,7 +102,10 @@ class ProductResource extends Resource
                     ]),
 
                     Section::make('Associations')->schema([
+
                         Select::make('category_id')
+                            ->label('Category')
+                            ->relationship('category', 'name')
                             ->searchable()
                             ->options(fn() => Category::limit(15)->pluck('name', 'id'))
                             ->getSearchResultsUsing(function (string $search): array {
@@ -122,8 +118,12 @@ class ProductResource extends Resource
                                 return Category::find($value)?->name;
                             })
                             ->required()
-                            ->live(),
+                            ->live()
+                            ->afterStateUpdated(fn(Get $get, Set $set) => self::generateSku($get, $set)),
+
                         Select::make('brand_id')
+                            ->label('Brand')
+                            ->relationship('brand', 'name')
                             ->searchable()
                             ->options(fn() => Brand::limit(15)->pluck('name', 'id'))
                             ->getSearchResultsUsing(function (string $search): array {
@@ -138,6 +138,8 @@ class ProductResource extends Resource
                             ->required(),
 
                         Select::make('supplier_id')
+                            ->label('Supplier')
+                            ->relationship('supplier', 'name')
                             ->searchable()
                             ->options(fn() => Supplier::limit(15)->pluck('name', 'id'))
                             ->getSearchResultsUsing(function (string $search): array {
@@ -172,6 +174,8 @@ class ProductResource extends Resource
                 IconColumn::make('status')->boolean()->label('Active'),
             ])
             ->filters([
+                TrashedFilter::make(),
+
                 TernaryFilter::make('status')
                     ->label('Status')
                     ->boolean()
@@ -185,11 +189,17 @@ class ProductResource extends Resource
                     ->indicator('Low Stock'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }
@@ -208,8 +218,22 @@ class ProductResource extends Resource
         return [
             'index' => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
+            'view' => Pages\ViewProduct::route('/{record}'),
             'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
+    }
+
+    public static function generateSku(Get $get, Set $set): void
+    {
+        $name = $get('name');
+        $categoryCode = Category::find($get('category_id'))?->code;
+
+        if ($name && $categoryCode) {
+            $productSlugPart = Str::slug($name);
+            $limitedProductSlugPart = trim(Str::limit($productSlugPart, 40, ''), '-');
+            $sku = Str::upper($categoryCode.'-'.$limitedProductSlugPart);
+            $set('sku', $sku);
+        }
     }
 
 }
