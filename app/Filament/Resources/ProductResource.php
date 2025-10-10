@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use Illuminate\Validation\Rules\Unique;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Models\Brand;
@@ -47,20 +48,20 @@ class ProductResource extends Resource
                         TextInput::make('name')
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(
-                                fn(Set $set, ?string $state) => $set(
-                                    'seo.slug',
-                                    preg_replace('/[^a-z0-9]+/i', '-', strtolower(trim($state)))
-                                )
-                            )
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                if ($state) {
+                                    $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', '', $state);
+
+                                    $set('seo.slug', Str::slug($sanitized));
+                                }
+                            })
                             ->unique(
                                 ignoreRecord: true,
-                                modifyRuleUsing: function (Rule $rule, Get $get) {
+                                modifyRuleUsing: function (Unique $rule, Get $get) {
                                     return $rule
                                         ->where('category_id', $get('category_id'));
                                 }
                             ),
-
                         TextInput::make('sku')->required()->unique(ignoreRecord: true),
                         MarkdownEditor::make('description')->columnSpanFull(),
                     ])->columns(2),
@@ -87,7 +88,7 @@ class ProductResource extends Resource
 
                 Group::make()->schema([
                     Section::make('Pricing & Stock')->schema([
-                        TextInput::make('base_cost')->numeric()->prefix('đ')->minValue(1),
+                        TextInput::make('base_cost')->numeric()->prefix('đ')->minValue(1)->required(),
                         TextInput::make('quantity')->numeric()->integer()->default(1)->minValue(1),
                     ]),
 
@@ -147,7 +148,8 @@ class ProductResource extends Resource
         return $table
             ->columns([
                 ImageColumn::make('thumbnail'),
-                TextColumn::make('name')->searchable(),
+                TextColumn::make('name')->searchable()->limit(50)->tooltip(fn(Product $record): string => $record->name
+                ),
                 TextColumn::make('sku')->searchable(),
                 TextColumn::make('category.name')->sortable(),
                 TextColumn::make('quantity')->sortable(),

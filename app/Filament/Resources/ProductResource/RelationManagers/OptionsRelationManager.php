@@ -31,6 +31,7 @@ class OptionsRelationManager extends RelationManager
 
                 TagsInput::make('values')
                     ->label('Option Values')
+                    ->required()
                     ->placeholder('New value'),
             ]);
     }

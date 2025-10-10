@@ -44,8 +44,7 @@ class VariantsRelationManager extends RelationManager
         foreach ($product->options as $option) {
             $schema[] = Select::make('option_values.'.$option->id)
                 ->label($option->name)
-                ->options($option->values->pluck('value', 'id'))
-                ->required();
+                ->options($option->values->pluck('value', 'id'));
         }
 
         return $form->schema($schema);
