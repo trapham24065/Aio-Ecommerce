@@ -46,7 +46,8 @@ class ProductResource extends Resource
                     Section::make('Product Information')->schema([
                         TextInput::make('name')
                             ->required()
-                            ->maxLength(100)
+                            ->rule('max:100')
+                            ->validationAttribute('Product Name')
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
                                 if (!$state) {
@@ -55,7 +56,7 @@ class ProductResource extends Resource
 
                                 $sanitizedForSlug = preg_replace('/[^\p{L}\p{N}\s]/u', '', $state);
                                 $slug = Str::slug($sanitizedForSlug);
-                                $limitedSlug = trim(Str::limit($slug, 60, ''), '-');
+                                $limitedSlug = trim(Str::limit($slug, 150, ''), '-');
                                 $set('seo.slug', $limitedSlug);
 
                                 self::generateSku($get, $set);
@@ -72,15 +73,26 @@ class ProductResource extends Resource
                             ->disabled()
                             ->dehydrated(),
 
-                        MarkdownEditor::make('description')->columnSpanFull(),
+                        MarkdownEditor::make('description')
+                            ->rule('max:500')
+                            ->validationAttribute('Description')
+                            ->columnSpanFull(),
                     ])->columns(2),
 
                     Section::make('SEO')
                         ->relationship('seo')
                         ->schema([
-                            TextInput::make('slug')->required()->unique(ignoreRecord: true),
-                            TextInput::make('meta_title'),
-                            TextInput::make('meta_description'),
+                            TextInput::make('slug')
+                                ->required()
+                                ->rule('max:150')
+                                ->validationAttribute('Slug')
+                                ->unique(ignoreRecord: true),
+                            TextInput::make('meta_title')
+                                ->rule('max:100')
+                                ->validationAttribute('Meta title'),
+                            TextInput::make('meta_description')
+                                ->rule('max:100')
+                                ->validationAttribute('Meta Description'),
                         ]),
 
                     Section::make('Images')->schema([
@@ -201,7 +213,8 @@ class ProductResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('id', 'desc');
     }
 
     public static function getRelations(): array
