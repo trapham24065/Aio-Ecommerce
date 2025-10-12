@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\ProductResource\RelationManagers;
 
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Filament\Forms;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -31,7 +33,7 @@ class VariantsRelationManager extends RelationManager
             $product = $livewire->getOwnerRecord();
 
             $skuGenerationClosure = function (Get $get, Set $set) use ($product) {
-                $optionValues = $get('option_values'); // Lấy mảng ID của các option value đã chọn
+                $optionValues = $get('option_values');
 
                 if (count($optionValues) < $product->options()->count()) {
                     return;
@@ -61,10 +63,9 @@ class VariantsRelationManager extends RelationManager
                     ->required()
                     ->numeric()
                     ->prefix('đ'),
-                TextInput::make('quantity')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
+                Placeholder::make('quantity')
+                    ->label('Stock (from Inventory)')
+                    ->content(fn(?ProductVariant $record): int => $record?->total_stock ?? 0),
             ];
 
             foreach ($product->options as $option) {
@@ -90,7 +91,9 @@ class VariantsRelationManager extends RelationManager
                     ->badge()
                     ->label('Options'),
                 Tables\Columns\TextColumn::make('price')->money('vnd'),
-                Tables\Columns\TextColumn::make('quantity'),
+                Tables\Columns\TextColumn::make('total_stock')
+                    ->label('Stock')
+                    ->sortable(),
             ])
             ->filters([
                 //

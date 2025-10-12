@@ -6,6 +6,8 @@ use App\Filament\Resources\CategoryResource\Pages;
 use App\Filament\Resources\CategoryResource\RelationManagers;
 use App\Models\Category;
 use Filament\Forms;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -15,6 +17,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Set;
+use Illuminate\Support\Str;
 
 class CategoryResource extends Resource
 {
@@ -27,7 +31,24 @@ class CategoryResource extends Resource
     {
         return $form
             ->schema([
-                //
+                TextInput::make('name')
+                    ->required()
+                    ->rule('max:100')
+                    ->validationAttribute('Category Name')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn(Set $set, ?string $state) => $set('code', Str::slug($state))),
+
+                TextInput::make('code')
+                    ->required()
+                    ->rule('max:100')
+                    ->validationAttribute('Category COde')
+                    ->unique(ignoreRecord: true)
+                    ->disabled()
+                    ->dehydrated(),
+
+                Toggle::make('status')
+                    ->label('Active')
+                    ->default(true),
             ]);
     }
 

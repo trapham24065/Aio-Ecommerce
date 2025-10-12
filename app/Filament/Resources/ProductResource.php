@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Forms\Components\Placeholder;
+use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Validation\Rules\Unique;
 use App\Filament\Resources\ProductResource\Pages;
@@ -30,6 +32,7 @@ use Illuminate\Support\Str;
 use Filament\Forms\Set;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Get;
+use Filament\Forms\Components\Radio;
 
 class ProductResource extends Resource
 {
@@ -38,151 +41,49 @@ class ProductResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    public static function form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                Group::make()->schema([
-                    Section::make('Product Information')->schema([
-                        TextInput::make('name')
-                            ->required()
-                            ->rule('max:100')
-                            ->validationAttribute('Product Name')
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
-                                if (!$state) {
-                                    return;
-                                }
-
-                                $sanitizedForSlug = preg_replace('/[^\p{L}\p{N}\s]/u', '', $state);
-                                $slug = Str::slug($sanitizedForSlug);
-                                $limitedSlug = trim(Str::limit($slug, 150, ''), '-');
-                                $set('seo.slug', $limitedSlug);
-
-                                self::generateSku($get, $set);
-                            })
-                            ->unique(
-                                ignoreRecord: true,
-                                modifyRuleUsing: function (Unique $rule, Get $get) {
-                                    return $rule->where('category_id', $get('category_id'));
-                                }
-                            ),
-                        TextInput::make('sku')
-                            ->required()
-                            ->unique(ignoreRecord: true)
-                            ->disabled()
-                            ->dehydrated(),
-
-                        MarkdownEditor::make('description')
-                            ->rule('max:500')
-                            ->validationAttribute('Description')
-                            ->columnSpanFull(),
-                    ])->columns(2),
-
-                    Section::make('SEO')
-                        ->relationship('seo')
-                        ->schema([
-                            TextInput::make('slug')
-                                ->required()
-                                ->rule('max:150')
-                                ->validationAttribute('Slug')
-                                ->unique(ignoreRecord: true),
-                            TextInput::make('meta_title')
-                                ->rule('max:100')
-                                ->validationAttribute('Meta title'),
-                            TextInput::make('meta_description')
-                                ->rule('max:100')
-                                ->validationAttribute('Meta Description'),
-                        ]),
-
-                    Section::make('Images')->schema([
-                        FileUpload::make('thumbnail')
-                            ->image()
-                            ->directory('products')
-                            ->required()
-                            ->maxSize(2048)
-                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif'])
-                            ->helperText('Upload a JPG, PNG, or GIF image. Maximum size 2MB.'),
-                    ]),
-
-                ])->columnSpan(['lg' => 2]),
-
-                Group::make()->schema([
-                    Section::make('Pricing & Stock')->schema([
-                        TextInput::make('base_cost')->numeric()->prefix('đ')->minValue(1)->required(),
-                        TextInput::make('quantity')->numeric()->integer()->default(1)->minValue(1),
-                    ]),
-
-                    Section::make('Associations')->schema([
-
-                        Select::make('category_id')
-                            ->label('Category')
-                            ->relationship('category', 'name')
-                            ->searchable()
-                            ->options(fn() => Category::limit(15)->pluck('name', 'id'))
-                            ->getSearchResultsUsing(function (string $search): array {
-                                return Category::where('name', 'like', "%{$search}%")
-                                    ->limit(50)
-                                    ->pluck('name', 'id')
-                                    ->toArray();
-                            })
-                            ->getOptionLabelUsing(function ($value): ?string {
-                                return Category::find($value)?->name;
-                            })
-                            ->required()
-                            ->live()
-                            ->afterStateUpdated(fn(Get $get, Set $set) => self::generateSku($get, $set)),
-
-                        Select::make('brand_id')
-                            ->label('Brand')
-                            ->relationship('brand', 'name')
-                            ->searchable()
-                            ->options(fn() => Brand::limit(15)->pluck('name', 'id'))
-                            ->getSearchResultsUsing(function (string $search): array {
-                                return Brand::where('name', 'like', "%{$search}%")
-                                    ->limit(50)
-                                    ->pluck('name', 'id')
-                                    ->toArray();
-                            })
-                            ->getOptionLabelUsing(function ($value): ?string {
-                                return Brand::find($value)?->name;
-                            })
-                            ->required(),
-
-                        Select::make('supplier_id')
-                            ->label('Supplier')
-                            ->relationship('supplier', 'name')
-                            ->searchable()
-                            ->options(fn() => Supplier::limit(15)->pluck('name', 'id'))
-                            ->getSearchResultsUsing(function (string $search): array {
-                                return Supplier::where('name', 'like', "%{$search}%")
-                                    ->limit(50)
-                                    ->pluck('name', 'id')
-                                    ->toArray();
-                            })
-                            ->getOptionLabelUsing(function ($value): ?string {
-                                return Supplier::find($value)?->name;
-                            })
-                            ->required(),
-                    ]),
-
-                    Section::make('Status')->schema([
-                        Toggle::make('status')->label('Active')->default(true),
-                    ]),
-                ])->columnSpan(['lg' => 1]),
-            ])->columns(3);
-    }
-
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 ImageColumn::make('thumbnail'),
-                TextColumn::make('name')->searchable()->limit(50)->tooltip(fn(Product $record): string => $record->name
-                ),
-                TextColumn::make('sku')->searchable(),
+
+                TextColumn::make('name')
+                    ->searchable()
+                    ->limit(50)
+                    ->tooltip(fn(Product $record): string => $record->name),
+
+                BadgeColumn::make('type')
+                    ->colors([
+                        'primary' => Product::TYPE_SIMPLE,
+                        'success' => Product::TYPE_VARIANT,
+                    ])
+                    ->formatStateUsing(fn(string $state): string => Str::title($state)),
+
+                TextColumn::make('sku')
+                    ->label('SKU / Variants')
+                    ->searchable()
+                    ->getStateUsing(function (Product $record): string {
+                        if ($record->type === Product::TYPE_SIMPLE) {
+                            return $record->sku ?? '-';
+                        }
+                        $variantCount = $record->variants()->count();
+                        return "{$variantCount} ".Str::plural('Variant', $variantCount);
+                    }),
+
                 TextColumn::make('category.name')->sortable(),
-                TextColumn::make('quantity')->sortable(),
+
+                TextColumn::make('quantity')
+                    ->label('Total Stock')
+                    ->sortable()
+                    ->getStateUsing(function (Product $record): string {
+                        $quantity = $record->quantity ?? 0;
+                        if ($record->type === Product::TYPE_VARIANT) {
+                            $variantCount = $record->variants()->count();
+                            return "{$quantity} (in {$variantCount} variants)";
+                        }
+                        return (string)$quantity;
+                    }),
+
                 IconColumn::make('status')->boolean()->label('Active'),
             ])
             ->filters([
@@ -229,10 +130,10 @@ class ProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListProducts::route('/'),
+            'index'  => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
-            'view' => Pages\ViewProduct::route('/{record}'),
-            'edit' => Pages\EditProduct::route('/{record}/edit'),
+            'view'   => Pages\ViewProduct::route('/{record}'),
+            'edit'   => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
 

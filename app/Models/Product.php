@@ -14,8 +14,13 @@ class Product extends Model
 
     use HasFactory, SoftDeletes;
 
+    public const TYPE_SIMPLE = 'simple';
+
+    public const TYPE_VARIANT = 'variant';
+
     protected $fillable
         = [
+            'type',
             'category_id',
             'supplier_id',
             'brand_id',
@@ -67,6 +72,16 @@ class Product extends Model
     public function seo(): MorphOne
     {
         return $this->morphOne(Seo::class, 'seoable');
+    }
+    
+    public function getTotalStockAttribute(): int
+    {
+        if ($this->type === self::TYPE_SIMPLE) {
+            return Inventory::where('product_variant_sku', $this->sku)->sum('quantity');
+        }
+
+        $variantSkus = $this->variants()->pluck('sku');
+        return Inventory::whereIn('product_variant_sku', $variantSkus)->sum('quantity');
     }
 
 }
