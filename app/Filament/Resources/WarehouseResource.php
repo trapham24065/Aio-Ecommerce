@@ -76,6 +76,11 @@ class WarehouseResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('view')
+                    ->label('View')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn(Warehouse $record): string => WarehouseResource::getUrl('view', ['record' => $record])),
+
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -96,6 +101,7 @@ class WarehouseResource extends Resource
     {
         return [
             'index'  => Pages\ListWarehouses::route('/'),
+            'view'   => Pages\ViewWarehouse::route('/{record}'),
             'create' => Pages\CreateWarehouse::route('/create'),
             'edit'   => Pages\EditWarehouse::route('/{record}/edit'),
         ];

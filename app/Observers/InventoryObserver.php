@@ -12,6 +12,7 @@ class InventoryObserver
     private function updateTotalStock(Inventory $inventory): void
     {
         $sku = $inventory->product_variant_sku;
+
         $product = null;
 
         $variant = ProductVariant::where('sku', $sku)->with('product')->first();
@@ -19,7 +20,6 @@ class InventoryObserver
         if ($variant) {
             $variant->quantity = $variant->total_stock;
             $variant->saveQuietly();
-
             $product = $variant->product;
         } else {
             $product = Product::where('sku', $sku)
@@ -28,7 +28,9 @@ class InventoryObserver
         }
 
         if ($product) {
-            $product->quantity = $product->total_stock;
+            $totalStock = $product->total_stock;
+
+            $product->quantity = $totalStock;
             $product->saveQuietly();
         }
     }

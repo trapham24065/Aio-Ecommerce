@@ -30,4 +30,9 @@ class ProductVariant extends Model
         return $this->belongsToMany(OptionValue::class, 'variant_values', 'variant_id', 'option_value_id');
     }
 
+    public function getTotalStockAttribute(): int
+    {
+        return Inventory::where('product_variant_sku', $this->sku)->sum('quantity') ?? 0;
+    }
+
 }

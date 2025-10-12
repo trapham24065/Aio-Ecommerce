@@ -73,15 +73,15 @@ class Product extends Model
     {
         return $this->morphOne(Seo::class, 'seoable');
     }
-    
+
     public function getTotalStockAttribute(): int
     {
         if ($this->type === self::TYPE_SIMPLE) {
-            return Inventory::where('product_variant_sku', $this->sku)->sum('quantity');
+            return Inventory::where('product_variant_sku', $this->sku)->sum('quantity') ?? 0;
         }
 
         $variantSkus = $this->variants()->pluck('sku');
-        return Inventory::whereIn('product_variant_sku', $variantSkus)->sum('quantity');
+        return Inventory::whereIn('product_variant_sku', $variantSkus)->sum('quantity') ?? 0;
     }
 
 }

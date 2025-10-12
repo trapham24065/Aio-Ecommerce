@@ -33,7 +33,10 @@ class EditProduct extends EditRecord
                 Group::make()->schema([
                     Section::make('Product Information')->schema([
                         TextInput::make('name')
-                            ->required()->maxLength(100)->live(onBlur: true)
+                            ->required()
+                            ->rule('max:100')
+                            ->validationAttribute('Product Name')
+                            ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
                                 if (!$state) {
                                     return;
@@ -51,7 +54,9 @@ class EditProduct extends EditRecord
                             Product::TYPE_VARIANT => 'Variant Product',
                         ])->live()->required(),
 
-                        MarkdownEditor::make('description')->columnSpanFull(),
+                        MarkdownEditor::make('description')
+                            ->rule('max:500')
+                            ->validationAttribute('Description')->columnSpanFull(),
                     ])->columns(2),
 
                     Section::make('Pricing & Stock')
@@ -66,8 +71,12 @@ class EditProduct extends EditRecord
 
                     Section::make('SEO')->relationship('seo')->schema([
                         TextInput::make('slug')->required()->unique(ignoreRecord: true),
-                        TextInput::make('meta_title'),
-                        TextInput::make('meta_description'),
+                        TextInput::make('meta_title')
+                            ->rule('max:100')
+                            ->validationAttribute('Meta Title'),
+                        TextInput::make('meta_description')
+                            ->rule('max:100')
+                            ->validationAttribute('Meta Description'),
                     ]),
                 ])->columnSpan(['lg' => 2]),
 

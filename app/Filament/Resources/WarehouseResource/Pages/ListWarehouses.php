@@ -75,7 +75,9 @@ class ListWarehouses extends ListRecords
                                 ],
                                 ['quantity' => 0]
                             );
-                            $inventory->increment('quantity', $item['quantity']);
+                            $inventory->quantity += $item['quantity'];
+
+                            $inventory->save();
 
                             InventoryTransaction::create([
                                 'warehouse_id'        => $data['warehouse_id'],
