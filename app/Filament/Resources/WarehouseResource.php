@@ -32,11 +32,13 @@ class WarehouseResource extends Resource
                     ->schema([
                         TextInput::make('name')
                             ->required()
-                            ->maxLength(255),
+                            ->rule('max:100')
+                            ->validationAttribute('Warehouse Name'),
                         TextInput::make('code')
                             ->required()
                             ->unique(ignoreRecord: true)
-                            ->maxLength(255),
+                            ->rule('max:50')
+                            ->validationAttribute('Code'),
                         Toggle::make('status')
                             ->default(true),
                     ])->columns(2),
@@ -45,10 +47,16 @@ class WarehouseResource extends Resource
                     ->schema([
                         TextInput::make('street')
                             ->label('Street Address')
+                            ->rule('max:500')
+                            ->validationAttribute('Street Address')
                             ->columnSpanFull(),
                         TextInput::make('city')
+                            ->rule('max:100')
+                            ->validationAttribute('City')
                             ->required(),
                         TextInput::make('state')
+                            ->rule('max:100')
+                            ->validationAttribute('State')
                             ->label('State / Province'),
                         TextInput::make('postal_code')
                             ->label('Postal Code'),
@@ -101,8 +109,8 @@ class WarehouseResource extends Resource
     {
         return [
             'index'  => Pages\ListWarehouses::route('/'),
-            'view'   => Pages\ViewWarehouse::route('/{record}'),
             'create' => Pages\CreateWarehouse::route('/create'),
+            'view'   => Pages\ViewWarehouse::route('/{record}'),
             'edit'   => Pages\EditWarehouse::route('/{record}/edit'),
         ];
     }

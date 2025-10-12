@@ -44,6 +44,18 @@ class ListWarehouses extends ListRecords
                             Select::make('product_variant_sku')
                                 ->label('Product SKU')
                                 ->searchable()
+                                ->options(function () {
+                                    $variantsQuery = DB::table('product_variants')
+                                        ->select('sku', 'created_at');
+
+                                    return DB::table('products')
+                                        ->where('type', Product::TYPE_SIMPLE)
+                                        ->select('sku', 'created_at')
+                                        ->union($variantsQuery)
+                                        ->orderBy('created_at', 'desc')
+                                        ->limit(10)
+                                        ->pluck('sku', 'sku');
+                                })
                                 ->getSearchResultsUsing(function (string $search) {
                                     $variantSkus = ProductVariant::where('sku', 'like', "{$search}%")
                                         ->limit(25)
@@ -57,6 +69,7 @@ class ListWarehouses extends ListRecords
                                     return $variantSkus->merge($simpleSkus)->toArray();
                                 })
                                 ->required(),
+
                             TextInput::make('quantity')
                                 ->numeric()
                                 ->minValue(1)
