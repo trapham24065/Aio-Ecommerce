@@ -84,4 +84,42 @@ class Product extends Model
         return Inventory::whereIn('product_variant_sku', $variantSkus)->sum('quantity') ?? 0;
     }
 
+    public function hasStock(): bool
+    {
+        if ($this->type === self::TYPE_SIMPLE && $this->sku) {
+            return Inventory::where('product_variant_sku', $this->sku)->where('quantity', '>', 0)->exists();
+        }
+
+        if ($this->type === self::TYPE_VARIANT) {
+            $variantSkus = $this->variants()->pluck('sku');
+            if ($variantSkus->isEmpty()) {
+                return false;
+            }
+            return Inventory::whereIn('product_variant_sku', $variantSkus)->where('quantity', '>', 0)->exists();
+        }
+
+        return false;
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (Product $product) {
+            if ($product->isDirty('type')) {
+                $originalType = $product->getOriginal('type');
+
+                if ($originalType === self::TYPE_VARIANT) {
+                    $product->options()->delete();
+                    $product->variants()->delete();
+                    $product->images()->delete();
+                }
+
+                if ($originalType === self::TYPE_SIMPLE) {
+                    $product->sku = null;
+                    $product->base_cost = null;
+                    $product->quantity = 0;
+                }
+            }
+        });
+    }
+
 }

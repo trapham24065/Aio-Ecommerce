@@ -74,6 +74,7 @@ class VariantsRelationManager extends RelationManager
                     ->options($option->values->pluck('value', 'id'))
                     ->required()
                     ->live()
+                    ->disabled(fn(?ProductVariant $record): bool => $record?->hasStock() ?? false)
                     ->afterStateUpdated($skuGenerationClosure);
             }
 

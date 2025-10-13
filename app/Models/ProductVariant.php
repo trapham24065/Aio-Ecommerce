@@ -35,4 +35,9 @@ class ProductVariant extends Model
         return Inventory::where('product_variant_sku', $this->sku)->sum('quantity') ?? 0;
     }
 
+    public function hasStock(): bool
+    {
+        return Inventory::where('product_variant_sku', $this->sku)->where('quantity', '>', 0)->exists();
+    }
+
 }

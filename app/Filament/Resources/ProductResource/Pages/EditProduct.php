@@ -36,6 +36,11 @@ class EditProduct extends EditRecord
                             ->required()
                             ->rule('max:100')
                             ->validationAttribute('Product Name')
+                            ->disabled(fn(Product $record): bool => $record->hasStock())
+                            ->helperText(
+                                fn(Product $record): string => $record->hasStock()
+                                    ? 'Cannot be changed when the product has stock.' : ''
+                            )
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
                                 if (!$state) {
@@ -52,7 +57,11 @@ class EditProduct extends EditRecord
                         Radio::make('type')->options([
                             Product::TYPE_SIMPLE  => 'Simple Product',
                             Product::TYPE_VARIANT => 'Variant Product',
-                        ])->live()->required(),
+                        ])
+                            ->live()
+                            ->required()
+                            ->disabled(fn(Product $record): bool => $record->hasStock())
+                            ->helperText('Product type cannot be changed after it has stock in inventory.'),
 
                         MarkdownEditor::make('description')
                             ->rule('max:500')
@@ -85,7 +94,8 @@ class EditProduct extends EditRecord
                         Select::make('category_id')->label('Category')->relationship('category', 'name')->searchable()
                             ->preload()->required()->live()->afterStateUpdated(
                                 fn(Get $get, Set $set) => ProductResource::generateSku($get, $set)
-                            ),
+                            )
+                            ->disabled(fn(Product $record): bool => $record->hasStock()),
                         Select::make('brand_id')->label('Brand')->relationship('brand', 'name')->searchable()->preload()
                             ->required(),
                         Select::make('supplier_id')->label('Supplier')->relationship('supplier', 'name')->searchable()
