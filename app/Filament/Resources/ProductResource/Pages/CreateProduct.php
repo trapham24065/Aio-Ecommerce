@@ -20,6 +20,7 @@ use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Unique;
 use Filament\Forms\Form;
+use Illuminate\Database\Eloquent\Builder;
 
 class CreateProduct extends CreateRecord
 {
@@ -98,7 +99,11 @@ class CreateProduct extends CreateRecord
                         ->schema([
                             Select::make('category_id')
                                 ->label('Category')
-                                ->relationship('category', 'name')
+                                ->relationship(
+                                    name: 'category',
+                                    titleAttribute: 'name',
+                                    modifyQueryUsing: fn(Builder $query) => $query->where('status', 1)
+                                )
                                 ->searchable()
                                 ->preload()
                                 ->required()
@@ -107,14 +112,21 @@ class CreateProduct extends CreateRecord
 
                             Select::make('brand_id')
                                 ->label('Brand')
-                                ->relationship('brand', 'name')
+                                ->relationship(
+                                    name: 'brand',
+                                    titleAttribute: 'name',
+                                    modifyQueryUsing: fn(Builder $query) => $query->where('status', 1)
+                                )
                                 ->searchable()
                                 ->preload()
                                 ->required(),
-
                             Select::make('supplier_id')
                                 ->label('Supplier')
-                                ->relationship('supplier', 'name')
+                                ->relationship(
+                                    name: 'supplier',
+                                    titleAttribute: 'name',
+                                    modifyQueryUsing: fn(Builder $query) => $query->where('status', 1)
+                                )
                                 ->searchable()
                                 ->preload()
                                 ->required(),

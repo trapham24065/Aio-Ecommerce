@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\WarehouseResource\Pages;
+use App\Models\Supplier;
 use App\Models\Warehouse;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -10,6 +11,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -71,6 +73,8 @@ class WarehouseResource extends Resource
                             ->validationAttribute('State')
                             ->label('State / Province'),
                         TextInput::make('postal_code')
+                            ->rule('max:100')
+                            ->validationAttribute('Postal Code')
                             ->label('Postal Code'),
                         Select::make('country')
                             ->searchable()
@@ -96,13 +100,15 @@ class WarehouseResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\Action::make('view')
-                    ->label('View')
-                    ->icon('heroicon-o-eye')
-                    ->url(fn(Warehouse $record): string => WarehouseResource::getUrl('view', ['record' => $record])),
-
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ActionGroup::make([
+                    Tables\Actions\Action::make('view')
+                        ->label('View')
+                        ->icon('heroicon-o-eye')
+                        ->url(fn(Warehouse $record): string => WarehouseResource::getUrl('view', ['record' => $record])
+                        ),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

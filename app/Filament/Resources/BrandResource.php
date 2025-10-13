@@ -12,11 +12,10 @@ use Filament\Forms\Form;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 
 class BrandResource extends Resource
@@ -32,10 +31,31 @@ class BrandResource extends Resource
             ->schema([
                 TextInput::make('name')
                     ->required()
+                    ->unique(ignoreRecord: true)
                     ->rule('max:100')
                     ->validationAttribute('Brand Name')
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn(Set $set, ?string $state) => $set('code', Str::slug($state))),
+                    ->afterStateUpdated(function (Set $set, ?string $state) use ($form) {
+                        if (!$state) {
+                            return;
+                        }
+                        $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', '', $state);
+                        $baseCode = Str::slug($sanitized);
+                        $finalCode = $baseCode;
+                        $counter = 1;
+                        $recordId = $form->getRecord()?->id;
+
+                        while (
+                        Brand::where('code', $finalCode)
+                            ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
+                            ->exists()
+                        ) {
+                            $counter++;
+                            $finalCode = $baseCode.'-'.$counter;
+                        }
+
+                        $set('code', $finalCode);
+                    }),
 
                 TextInput::make('code')
                     ->required()
@@ -64,9 +84,14 @@ class BrandResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ActionGroup::make([
+                    Tables\Actions\Action::make('view')
+                        ->label('View')
+                        ->icon('heroicon-o-eye')
+                        ->url(fn(Brand $record): string => BrandResource::getUrl('view', ['record' => $record])),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -78,7 +103,7 @@ class BrandResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ProductsRelationManager::class,
         ];
     }
 
@@ -87,6 +112,7 @@ class BrandResource extends Resource
         return [
             'index'  => Pages\ListBrands::route('/'),
             'create' => Pages\CreateBrand::route('/create'),
+            'view'   => Pages\ViewBrand::route('/{record}'),
             'edit'   => Pages\EditBrand::route('/{record}/edit'),
         ];
     }

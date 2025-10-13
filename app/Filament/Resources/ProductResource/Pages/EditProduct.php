@@ -18,6 +18,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Unique;
 
@@ -55,7 +56,7 @@ class EditProduct extends EditRecord
                             )),
 
                         Radio::make('type')->options([
-                            Product::TYPE_SIMPLE  => 'Simple Product',
+                            Product::TYPE_SIMPLE => 'Simple Product',
                             Product::TYPE_VARIANT => 'Variant Product',
                         ])
                             ->live()
@@ -91,14 +92,26 @@ class EditProduct extends EditRecord
 
                 Group::make()->schema([
                     Section::make('Associations')->schema([
-                        Select::make('category_id')->label('Category')->relationship('category', 'name')->searchable()
+                        Select::make('category_id')->label('Category')->relationship(
+                            name: 'category',
+                            titleAttribute: 'name',
+                            modifyQueryUsing: fn(Builder $query) => $query->where('status', 1)
+                        )->searchable()
                             ->preload()->required()->live()->afterStateUpdated(
                                 fn(Get $get, Set $set) => ProductResource::generateSku($get, $set)
                             )
                             ->disabled(fn(Product $record): bool => $record->hasStock()),
-                        Select::make('brand_id')->label('Brand')->relationship('brand', 'name')->searchable()->preload()
+                        Select::make('brand_id')->label('Brand')->relationship(
+                            name: 'brand',
+                            titleAttribute: 'name',
+                            modifyQueryUsing: fn(Builder $query) => $query->where('status', 1)
+                        )->searchable()->preload()
                             ->required(),
-                        Select::make('supplier_id')->label('Supplier')->relationship('supplier', 'name')->searchable()
+                        Select::make('supplier_id')->label('Supplier')->relationship(
+                            name: 'supplier',
+                            titleAttribute: 'name',
+                            modifyQueryUsing: fn(Builder $query) => $query->where('status', 1)
+                        )->searchable()
                             ->preload()->required(),
                     ]),
                     Section::make('Images')->schema([

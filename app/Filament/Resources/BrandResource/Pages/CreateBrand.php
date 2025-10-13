@@ -8,5 +8,12 @@ use Filament\Resources\Pages\CreateRecord;
 
 class CreateBrand extends CreateRecord
 {
+
     protected static string $resource = BrandResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return self::getResource()::getUrl('index');
+    }
+
 }

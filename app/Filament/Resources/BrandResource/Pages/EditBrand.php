@@ -8,6 +8,7 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditBrand extends EditRecord
 {
+
     protected static string $resource = BrandResource::class;
 
     protected function getHeaderActions(): array
@@ -16,4 +17,10 @@ class EditBrand extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return self::getResource()::getUrl('index');
+    }
+
 }

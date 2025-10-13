@@ -11,6 +11,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -34,14 +35,33 @@ class CategoryResource extends Resource
                 TextInput::make('name')
                     ->required()
                     ->rule('max:100')
+                    ->unique(ignoreRecord: true)
                     ->validationAttribute('Category Name')
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn(Set $set, ?string $state) => $set('code', Str::slug($state))),
+                    ->afterStateUpdated(function (Set $set, ?string $state) use ($form) {
+                        if (!$state) {
+                            return;
+                        }
+                        $baseCode = Str::slug($state);
+                        $finalCode = $baseCode;
+                        $counter = 1;
+                        $recordId = $form->getRecord()?->id;
+                        while (
+                        Category::where('code', $finalCode)
+                            ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
+                            ->exists()
+                        ) {
+                            $counter++;
+                            $finalCode = $baseCode.'-'.$counter;
+                        }
+
+                        $set('code', $finalCode);
+                    }),
 
                 TextInput::make('code')
                     ->required()
-                    ->rule('max:100')
-                    ->validationAttribute('Category COde')
+                    ->rule('max:150')
+                    ->validationAttribute('Category Code')
                     ->unique(ignoreRecord: true)
                     ->disabled()
                     ->dehydrated(),
@@ -65,21 +85,26 @@ class CategoryResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ActionGroup::make([
+                    Tables\Actions\Action::make('view')
+                        ->label('View')
+                        ->icon('heroicon-o-eye')
+                        ->url(fn(Category $record): string => CategoryResource::getUrl('view', ['record' => $record])),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])->defaultSort('id', 'desc');
     }
 
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ProductsRelationManager::class,
         ];
     }
 
@@ -88,6 +113,7 @@ class CategoryResource extends Resource
         return [
             'index'  => Pages\ListCategories::route('/'),
             'create' => Pages\CreateCategory::route('/create'),
+            'view'   => Pages\ViewCategory::route('/{record}'),
             'edit'   => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
