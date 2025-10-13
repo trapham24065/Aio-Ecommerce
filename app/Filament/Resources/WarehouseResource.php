@@ -3,9 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\WarehouseResource\Pages;
-use App\Filament\Resources\WarehouseResource\RelationManagers;
 use App\Models\Warehouse;
-use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -16,6 +14,8 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Set;
+use Illuminate\Support\Str;
 
 class WarehouseResource extends Resource
 {
@@ -32,13 +32,25 @@ class WarehouseResource extends Resource
                     ->schema([
                         TextInput::make('name')
                             ->required()
+                            ->unique(ignoreRecord: true)
                             ->rule('max:100')
-                            ->validationAttribute('Warehouse Name'),
+                            ->live(onBlur: true)
+                            ->validationAttribute('Warehouse Name')
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                if ($state) {
+                                    $slug = Str::slug($state);
+                                    $limitedSlug = Str::limit($slug, 50, '');
+                                    $finalCode = trim($limitedSlug, '-');
+                                    $set('code', $finalCode);
+                                }
+                            }),
                         TextInput::make('code')
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->rule('max:50')
-                            ->validationAttribute('Code'),
+                            ->validationAttribute('Code')
+                            ->disabled()
+                            ->dehydrated(),
                         Toggle::make('status')
                             ->default(true),
                     ])->columns(2),
@@ -47,7 +59,7 @@ class WarehouseResource extends Resource
                     ->schema([
                         TextInput::make('street')
                             ->label('Street Address')
-                            ->rule('max:500')
+                            ->rule('max:300')
                             ->validationAttribute('Street Address')
                             ->columnSpanFull(),
                         TextInput::make('city')
@@ -90,12 +102,14 @@ class WarehouseResource extends Resource
                     ->url(fn(Warehouse $record): string => WarehouseResource::getUrl('view', ['record' => $record])),
 
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('id', 'desc');
     }
 
     public static function getRelations(): array
