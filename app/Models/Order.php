@@ -42,4 +42,11 @@ class Order extends Model
         return $this->hasOne(OrderAddress::class)->where('type', 'shipping');
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (Order $order) {
+            $order->order_code = 'DH-'.now()->year.'-'.str_pad(self::count() + 1, 6, '0', STR_PAD_LEFT);
+        });
+    }
+
 }

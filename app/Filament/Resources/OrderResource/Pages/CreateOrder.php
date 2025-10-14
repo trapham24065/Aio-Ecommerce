@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
+use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Filament\Forms\Components\Placeholder;
@@ -15,6 +16,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\DB;
 
 class CreateOrder extends CreateRecord
 {
@@ -27,8 +29,11 @@ class CreateOrder extends CreateRecord
             ->schema([
                 Section::make('Customer & Order Details')->schema([
                     Select::make('customer_id')
-                        ->relationship('customer', 'full_name')
-                        ->searchable()->preload()->required(),
+                        ->relationship('customer', 'first_name')
+                        ->getOptionLabelFromRecordUsing(fn($record) => $record->first_name.' '.$record->last_name)
+                        ->searchable(['first_name', 'last_name'])
+                        ->preload()
+                        ->required(),
                     Select::make('status')
                         ->options([
                             'pending'    => 'Pending',
@@ -47,20 +52,35 @@ class CreateOrder extends CreateRecord
                             Select::make('product_variant_sku')
                                 ->label('Product SKU')
                                 ->searchable()
-                                ->reactive() // Rất quan trọng!
+                                ->reactive()
                                 ->getSearchResultsUsing(function (string $search) {
-                                    $variantSkus = ProductVariant::where('sku', 'like', "{$search}%")
+                                    if (empty($search)) {
+                                        return [];
+                                    }
+
+                                    $variantSkus = ProductVariant::query()
+                                        ->join(
+                                            'inventory',
+                                            'product_variants.sku',
+                                            '=',
+                                            'inventory.product_variant_sku'
+                                        )
+                                        ->where('inventory.quantity', '>', 0)
+                                        ->where('product_variants.sku', 'like', "{$search}%")
                                         ->limit(25)
-                                        ->pluck('sku', 'sku');
-                                    $simpleSkus = Product::where('type', Product::TYPE_SIMPLE)
-                                        ->where('sku', 'like', "{$search}%")
+                                        ->pluck('product_variants.sku', 'product_variants.sku');
+
+                                    $simpleSkus = Product::query()
+                                        ->join('inventory', 'products.sku', '=', 'inventory.product_variant_sku')
+                                        ->where('inventory.quantity', '>', 0)
+                                        ->where('products.type', Product::TYPE_SIMPLE)
+                                        ->where('products.sku', 'like', "{$search}%")
                                         ->limit(25)
-                                        ->pluck('sku', 'sku');
+                                        ->pluck('products.sku', 'products.sku');
+
                                     return $variantSkus->merge($simpleSkus);
                                 })
-                                // Đặt afterStateUpdated ở đây, nó sẽ được gọi trên Select
                                 ->afterStateUpdated(function ($state, Set $set) {
-                                    // Tự động điền giá
                                     $variant = ProductVariant::where('sku', $state)->first();
                                     if ($variant) {
                                         $set('price', $variant->price);
@@ -71,17 +91,54 @@ class CreateOrder extends CreateRecord
                                         }
                                     }
                                 })
+                                ->required()
+                                ->columnSpan(2),
+                            Select::make('warehouse_id')
+                                ->label('Warehouse (Stock)')
+                                ->reactive()
+                                ->options(function (Get $get) {
+                                    $sku = $get('product_variant_sku');
+                                    if (!$sku) {
+                                        return [];
+                                    }
+
+                                    return Inventory::where('product_variant_sku', $sku)
+                                        ->where('quantity', '>', 0)
+                                        ->join('warehouses', 'inventory.warehouse_id', '=', 'warehouses.id')
+                                        ->get(['inventory.warehouse_id', 'warehouses.name', 'inventory.quantity'])
+                                        ->mapWithKeys(function ($item) {
+                                            return [$item->warehouse_id => "{$item->name} (Stock: {$item->quantity})"];
+                                        });
+                                })
+                                ->visible(fn(Get $get) => filled($get('product_variant_sku')))
                                 ->required(),
 
                             TextInput::make('quantity')
                                 ->numeric()->minValue(1)->default(1)
-                                ->reactive() // Rất quan trọng!
-                                ->required(),
+                                ->reactive()
+                                ->required()
+                                ->rules([
+                                    function (Get $get) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $sku = $get('product_variant_sku');
+                                            $warehouseId = $get('warehouse_id');
+                                            if (!$sku || !$warehouseId) {
+                                                return;
+                                            }
 
-                            // Bỏ disabled(), vì chúng ta cần tính toán và set giá trị cho nó
+                                            $stock = Inventory::where('warehouse_id', $warehouseId)
+                                                ->where('product_variant_sku', $sku)
+                                                ->value('quantity');
+
+                                            if ($value > $stock) {
+                                                $fail("The quantity cannot exceed the available stock of {$stock}.");
+                                            }
+                                        };
+                                    },
+                                ]),
+
                             TextInput::make('price')->numeric()->required(),
 
-                            // SỬA LẠI TRƯỜNG NÀY
                             Placeholder::make('total_price')
                                 ->label('Total')
                                 ->content(function (Get $get): string {
@@ -90,13 +147,11 @@ class CreateOrder extends CreateRecord
                                     return number_format($price * $quantity).' VND';
                                 }),
                         ])
-                        // DI CHUYỂN LOGIC TÍNH TỔNG VÀO ĐÂY
                         ->mutateRelationshipDataBeforeCreateUsing(function (array $data, Get $get): array {
                             $price = (float)($data['price'] ?? 0);
                             $quantity = (int)($data['quantity'] ?? 0);
                             $data['total_price'] = $price * $quantity;
 
-                            // Lấy tên sản phẩm để lưu lại
                             $variant = ProductVariant::where('sku', $data['product_variant_sku'])->first();
                             if ($variant) {
                                 $data['product_name'] = $variant->product->name;
@@ -115,7 +170,6 @@ class CreateOrder extends CreateRecord
                             return $data;
                         })
                         ->afterStateUpdated(function (Get $get, Set $set) {
-                            // Tự động cập nhật tổng tiền của cả đơn hàng
                             self::updateTotals($get, $set);
                         })
                         ->columns(4)
@@ -154,6 +208,17 @@ class CreateOrder extends CreateRecord
 
         $set('subtotal', $subtotal);
         $set('grand_total', $grand_total);
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['subtotal'] = $this->data['subtotal'] ?? 0;
+        $data['grand_total'] = $this->data['grand_total'] ?? 0;
+
+        if (isset($data['shippingAddress'])) {
+            $data['shippingAddress']['type'] = 'shipping';
+        }
+        return $data;
     }
 
 }

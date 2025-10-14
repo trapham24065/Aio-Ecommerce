@@ -25,16 +25,19 @@ class OrderObserver
         if ($order->isDirty('status') && $order->status === 'processing') {
             foreach ($order->items as $item) {
                 $inventory = Inventory::where('product_variant_sku', $item->sku)->first();
-                if ($inventory) {
+
+                if ($inventory && $inventory->quantity >= $item->quantity) {
                     $inventory->quantity -= $item->quantity;
-                    $inventory->save(); // Kích hoạt InventoryObserver
+                    $inventory->save();
                 }
 
                 InventoryTransaction::create([
-                    'type'            => 'OUT',
-                    'quantity_change' => -$item->quantity,
-                    'reference_id'    => $order->id,
-                    'reference_type'  => Order::class,
+                    'warehouse_id'        => $item->warehouse_id,
+                    'product_variant_sku' => $item->sku,
+                    'type'                => 'OUT',
+                    'quantity_change'     => -$item->quantity,
+                    'reference_id'        => $order->id,
+                    'reference_type'      => Order::class,
                 ]);
             }
         }
