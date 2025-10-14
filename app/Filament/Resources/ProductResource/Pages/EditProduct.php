@@ -72,7 +72,9 @@ class EditProduct extends EditRecord
                     Section::make('Pricing & Stock')
                         ->schema([
                             TextInput::make('sku')->required()->unique(ignoreRecord: true)->disabled()->dehydrated(),
-                            TextInput::make('base_cost')->numeric()->prefix('đ')->minValue(1)->required(),
+                            TextInput::make('base_cost')->numeric()->prefix('đ')->minValue(1)->required()->maxValue(
+                                9999999999999.99
+                            ),
                             Placeholder::make('quantity')
                                 ->label('Total Stock (from Inventory)')
                                 ->content(fn(?Product $record): int => $record?->total_stock ?? 0),

@@ -108,6 +108,7 @@ class ProductResource extends Resource
                         ->label('View')
                         ->icon('heroicon-o-eye')
                         ->url(fn(Product $record): string => ProductResource::getUrl('view', ['record' => $record])),
+                    Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make(),
                     Tables\Actions\ForceDeleteAction::make(),
                     Tables\Actions\RestoreAction::make(),

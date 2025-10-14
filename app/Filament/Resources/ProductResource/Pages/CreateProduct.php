@@ -68,7 +68,9 @@ class CreateProduct extends CreateRecord
                             ->schema([
                                 TextInput::make('sku')->required()->unique(ignoreRecord: true)->disabled()->dehydrated(
                                 ),
-                                TextInput::make('base_cost')->numeric()->prefix('đ')->minValue(1)->required(),
+                                TextInput::make('base_cost')->numeric()->prefix('đ')->minValue(1)->required()->maxValue(
+                                    9999999999999.99
+                                ),
 
                                 Placeholder::make('quantity')
                                     ->label('Total Stock (from Inventory)')
@@ -143,7 +145,9 @@ class CreateProduct extends CreateRecord
                         ])->columnSpan(['lg' => 1]),
                     Section::make('Status')
                         ->schema([
-                            Toggle::make('status')->label('Active')->default(true),
+                            Toggle::make('status')->label('Active')->default(true)->visible(
+                                fn(Get $get): bool => $get('type') === Product::TYPE_SIMPLE
+                            ),
                         ])->columnSpan(['lg' => 1]),
                 ])->columnSpan(['lg' => 1]),
             ])->columns(3);
@@ -158,6 +162,15 @@ class CreateProduct extends CreateRecord
         }
 
         return self::getResource()::getUrl('index');
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        if ($data['type'] === Product::TYPE_VARIANT) {
+            $data['status'] = 0;
+        }
+
+        return $data;
     }
 
 }

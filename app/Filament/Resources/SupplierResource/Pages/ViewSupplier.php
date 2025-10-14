@@ -39,7 +39,7 @@ class ViewSupplier extends ViewRecord
                                         TextEntry::make('home_url')
                                             ->label('Website')
                                             ->icon('heroicon-o-globe-alt')
-                                            ->url(fn($state): string => $state)
+                                            ->url(fn($state): string => $state ?: '#')
                                             ->openUrlInNewTab(),
 
                                         TextEntry::make('status')

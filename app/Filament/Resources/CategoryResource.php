@@ -42,7 +42,8 @@ class CategoryResource extends Resource
                         if (!$state) {
                             return;
                         }
-                        $baseCode = Str::slug($state);
+                        $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', '', $state);
+                        $baseCode = Str::slug($sanitized);
                         $finalCode = $baseCode;
                         $counter = 1;
                         $recordId = $form->getRecord()?->id;
