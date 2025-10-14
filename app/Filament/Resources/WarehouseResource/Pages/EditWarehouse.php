@@ -8,6 +8,7 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditWarehouse extends EditRecord
 {
+
     protected static string $resource = WarehouseResource::class;
 
     protected function getHeaderActions(): array
@@ -16,4 +17,19 @@ class EditWarehouse extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function getFormOptions(): array
+    {
+        return [
+            'attributes' => [
+                'novalidate' => true,
+            ],
+        ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return self::getResource()::getUrl('index');
+    }
+
 }

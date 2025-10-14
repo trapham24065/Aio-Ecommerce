@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\ProductResource\Pages;
 
 use App\Filament\Resources\ProductResource;
+use App\Filament\Resources\ProductResource\RelationManagers\ImagesRelationManager;
+use App\Filament\Resources\ProductResource\RelationManagers\OptionsRelationManager;
+use App\Filament\Resources\ProductResource\RelationManagers\VariantsRelationManager;
 use App\Models\Product;
 use Filament\Actions;
 use Filament\Forms\Components\FileUpload;
@@ -21,6 +24,9 @@ use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Unique;
+use Filament\Notifications\Notification;
+use Filament\Support\Exceptions\Halt;
+use Filament\Actions\Action;
 
 class EditProduct extends EditRecord
 {
@@ -138,11 +144,53 @@ class EditProduct extends EditRecord
             ])->columns(3);
     }
 
+    public function getRelationManagers(): array
+    {
+        if ($this->record->type === Product::TYPE_VARIANT) {
+            return static::getResource()::getRelations();
+        }
+
+        return [];
+    }
+
+    protected function getSaveFormAction(): Actions\Action
+    {
+        return parent::getSaveFormAction()
+            ->requiresConfirmation(
+                fn(array $data): bool => $this->getRecord()->type !== $data['type']
+            )
+            ->modalHeading('Confirm Product Type Change')
+            ->modalDescription(
+                'Changing the product type will delete all associated variants and options. Are you sure you want to proceed? This action cannot be undone.'
+            )
+            ->modalSubmitActionLabel('Yes, change it');
+    }
+
+    protected function afterSave(): void
+    {
+        $product = $this->getRecord();
+
+        if ($product->wasChanged('type')) {
+            Notification::make()
+                ->title('Product Type Changed')
+                ->body('The page has been reloaded to reflect the new product type.')
+                ->success()
+                ->send();
+
+            $this->redirect(self::getResource()::getUrl('edit', ['record' => $product]));
+        }
+    }
+
     protected function getHeaderActions(): array
     {
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return self::getResource()::getUrl('index');
     }
 
 }

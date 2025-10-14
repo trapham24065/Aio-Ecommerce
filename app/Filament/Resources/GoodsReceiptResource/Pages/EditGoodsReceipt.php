@@ -11,4 +11,9 @@ class EditGoodsReceipt extends EditRecord
 
     protected static string $resource = GoodsReceiptResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return self::getResource()::getUrl('index');
+    }
+
 }

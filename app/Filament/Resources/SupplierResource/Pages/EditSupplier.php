@@ -8,6 +8,7 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditSupplier extends EditRecord
 {
+
     protected static string $resource = SupplierResource::class;
 
     protected function getHeaderActions(): array
@@ -16,4 +17,10 @@ class EditSupplier extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return self::getResource()::getUrl('index');
+    }
+
 }

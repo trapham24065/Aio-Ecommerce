@@ -87,4 +87,13 @@ class ViewProduct extends ViewRecord
             ]);
     }
 
+    public function getRelationManagers(): array
+    {
+        if ($this->record->type === Product::TYPE_VARIANT) {
+            return static::getResource()::getRelations();
+        }
+
+        return [];
+    }
+
 }

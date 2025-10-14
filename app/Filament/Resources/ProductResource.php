@@ -2,30 +2,18 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms\Components\Placeholder;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\TrashedFilter;
-use Illuminate\Validation\Rules\Unique;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
-use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\Supplier;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\MarkdownEditor;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -33,7 +21,7 @@ use Illuminate\Support\Str;
 use Filament\Forms\Set;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Get;
-use Filament\Forms\Components\Radio;
+use Filament\Pages\Page;
 
 class ProductResource extends Resource
 {
