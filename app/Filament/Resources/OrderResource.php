@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -79,11 +80,13 @@ class OrderResource extends Resource
                 TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->actions([
-                Tables\Actions\Action::make('view')
-                    ->label('View Details')
-                    ->icon('heroicon-o-eye')
-                    ->url(fn(Order $record): string => OrderResource::getUrl('view', ['record' => $record])),
-                Tables\Actions\EditAction::make(),
+                ActionGroup::make([
+                    Tables\Actions\Action::make('view')
+                        ->label('View Details')
+                        ->icon('heroicon-o-eye')
+                        ->url(fn(Order $record): string => OrderResource::getUrl('view', ['record' => $record])),
+                    Tables\Actions\EditAction::make(),
+                ]),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -91,7 +94,7 @@ class OrderResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ItemsRelationManager::class,
         ];
     }
 

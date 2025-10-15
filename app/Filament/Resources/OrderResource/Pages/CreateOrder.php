@@ -17,6 +17,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\DB;
+use App\Models\Customer;
 
 class CreateOrder extends CreateRecord
 {
@@ -33,7 +34,18 @@ class CreateOrder extends CreateRecord
                         ->getOptionLabelFromRecordUsing(fn($record) => $record->first_name.' '.$record->last_name)
                         ->searchable(['first_name', 'last_name'])
                         ->preload()
-                        ->required(),
+                        ->required()
+                        ->live()
+                        ->afterStateUpdated(function (Set $set, ?string $state) {
+                            if (is_null($state)) {
+                                return;
+                            }
+                            $customer = Customer::find($state);
+                            if ($customer) {
+                                $set('shippingAddress.full_name', $customer->full_name);
+                                $set('shippingAddress.phone', $customer->phone);
+                            }
+                        }),
                     Select::make('status')
                         ->options([
                             'pending'    => 'Pending',
@@ -176,12 +188,37 @@ class CreateOrder extends CreateRecord
                         ->required(),
                 ]),
 
-                Section::make('Shipping Address')->schema([
-                    TextInput::make('shippingAddress.full_name')->label('Full Name')->required(),
-                    TextInput::make('shippingAddress.phone')->label('Phone')->required(),
-                    TextInput::make('shippingAddress.street')->label('Street')->required(),
-                    TextInput::make('shippingAddress.city')->label('City')->required(),
-                ])->columns(2),
+                Section::make('Shipping Address')
+                    ->schema([
+                        TextInput::make('shippingAddress.full_name')
+                            ->label('Full Name')
+                            ->required(),
+                        TextInput::make('shippingAddress.phone')
+                            ->label('Phone')
+                            ->tel()
+                            ->required(),
+                        TextInput::make('shippingAddress.street')
+                            ->label('Street Address')
+                            ->required()
+                            ->columnSpanFull(),
+                        TextInput::make('shippingAddress.ward')
+                            ->label('Ward / Commune'),
+                        TextInput::make('shippingAddress.district')
+                            ->label('District / County')
+                            ->required(),
+                        TextInput::make('shippingAddress.city')
+                            ->label('City / Province')
+                            ->required(),
+                        Select::make('shippingAddress.country')
+                            ->label('Country')
+                            ->searchable()
+                            ->options([
+                                'VN' => 'Vietnam',
+                                'US' => 'United States',
+                                'SG' => 'Singapore',
+                            ])
+                            ->required(),
+                    ])->columns(2),
 
                 Section::make('Summary')->schema([
                     TextInput::make('shipping_fee')->numeric()->default(0)->reactive()->afterStateUpdated(
@@ -212,13 +249,31 @@ class CreateOrder extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['subtotal'] = $this->data['subtotal'] ?? 0;
-        $data['grand_total'] = $this->data['grand_total'] ?? 0;
-
-        if (isset($data['shippingAddress'])) {
-            $data['shippingAddress']['type'] = 'shipping';
+        $subtotal = 0;
+        if (isset($this->data['items'])) {
+            foreach ($this->data['items'] as $item) {
+                $subtotal += ($item['price'] ?? 0) * ($item['quantity'] ?? 0);
+            }
         }
+
+        $shipping_fee = (float)($this->data['shipping_fee'] ?? 0);
+        $discount_amount = (float)($this->data['discount_amount'] ?? 0);
+
+        $data['subtotal'] = $subtotal;
+        $data['grand_total'] = $subtotal + $shipping_fee - $discount_amount;
+
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        $order = $this->getRecord();
+        $shippingAddressData = $this->form->getState()['shippingAddress'];
+
+        if ($shippingAddressData) {
+            $shippingAddressData['type'] = 'shipping';
+            $order->shippingAddress()->create($shippingAddressData);
+        }
     }
 
 }
