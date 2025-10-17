@@ -7,6 +7,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -18,10 +19,7 @@ class InventoryRelationManager extends RelationManager
 
     public function form(Form $form): Form
     {
-        return $form->schema([
-            Placeholder::make('product_variant_sku'),
-            Placeholder::make('quantity'),
-        ]);
+        return $form->schema([]);
     }
 
     public function table(Table $table): Table
@@ -29,24 +27,18 @@ class InventoryRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('product_variant_sku')
             ->columns([
-                Tables\Columns\TextColumn::make('product_variant_sku')->searchable(),
-                Tables\Columns\TextColumn::make('quantity')->sortable(),
+                TextColumn::make('product_variant_sku')
+                    ->label('Product SKU')
+                    ->searchable(),
+
+                TextColumn::make('quantity')
+                    ->label('Stock Quantity')
+                    ->numeric()
+                    ->sortable(),
             ])
-            ->filters([
-                //
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make(),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->headerActions([])
+            ->actions([])
+            ->bulkActions([]);
     }
 
 }

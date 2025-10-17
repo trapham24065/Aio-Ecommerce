@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\WarehouseResource\Pages;
+use App\Filament\Resources\WarehouseResource\RelationManagers\InventoryRelationManager;
 use App\Models\Supplier;
 use App\Models\Warehouse;
 use Filament\Forms\Components\Select;
@@ -121,7 +122,8 @@ class WarehouseResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            InventoryRelationManager::class,
+
         ];
     }
 

@@ -2,11 +2,27 @@
 
 namespace App\Models;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use ApiPlatform\Metadata\Get;
 
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Post(),
+        new Get(),
+        new Put(),
+        new Delete(),
+    ],
+    security: "is_granted('ROLE_USER')"
+)]
 class Warehouse extends Model
 {
 

@@ -2,13 +2,31 @@
 
 namespace App\Models;
 
+use ApiPlatform\Metadata\Patch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
+use Symfony\Component\Serializer\Annotation\Groups;
 
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Post(),
+        new Get(),
+        new Put(),
+        new Delete(),
+    ],
+    security: "is_granted('ROLE_USER')"
+)]
 class Product extends Model
 {
 
@@ -32,6 +50,10 @@ class Product extends Model
             'quantity',
             'flag',
             'status',
+        ];
+
+    protected $casts
+        = [
         ];
 
     public function category(): BelongsTo
@@ -103,6 +125,19 @@ class Product extends Model
 
     protected static function booted(): void
     {
+        static::creating(static function ($product) {
+            if (is_string($product->category) && str_starts_with($product->category, '/api/categories/')) {
+                $product->category_id = basename($product->category);
+            }
+
+            if (is_string($product->supplier) && str_starts_with($product->supplier, '/api/suppliers/')) {
+                $product->supplier_id = basename($product->supplier);
+            }
+
+            if (is_string($product->brand) && str_starts_with($product->brand, '/api/brands/')) {
+                $product->brand_id = basename($product->brand);
+            }
+        });
         static::updating(function (Product $product) {
             if ($product->isDirty('type')) {
                 $originalType = $product->getOriginal('type');
