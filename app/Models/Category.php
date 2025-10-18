@@ -11,13 +11,21 @@ use ApiPlatform\Metadata\Put;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Filament\Notifications\Notification;
+use App\Http\Requests\StoreCategoryRequest;
+use App\ApiPlatform\State\CategoryProcessor;
 
 #[ApiResource(
     operations: [
         new GetCollection(),
-        new Post(),
+        new Post(
+            input: StoreCategoryRequest::class,
+            processor: CategoryProcessor::class
+        ),
         new Get(),
-        new Put(),
+        new Put(
+            input: StoreCategoryRequest::class,
+            processor: CategoryProcessor::class
+        ),
         new Delete(),
     ],
     security: "is_granted('ROLE_USER')"
@@ -50,3 +58,4 @@ class Category extends Model
     }
 
 }
+

@@ -14,6 +14,7 @@ declare(strict_types=1);
 use ApiPlatform\Metadata\UrlGeneratorInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\Serializer\NameConverter\SnakeCaseToCamelCaseNameConverter;
 
 return [
@@ -52,7 +53,10 @@ return [
 
     'error_formats' => [
         'jsonproblem' => ['application/problem+json'],
+        'json'        => ['application/json'],
     ],
+
+    'error_provider' => \App\ApiPlatform\State\ValidationErrorProvider::class,
 
     'defaults' => [
         'pagination_enabled'                => true,
@@ -63,7 +67,7 @@ return [
         'pagination_items_per_page'         => 30,
         'pagination_maximum_items_per_page' => 30,
         'route_prefix'                      => '/api',
-        'middleware'                        => 'auth:sanctum',
+        'middleware'                        => ['auth:sanctum'],
     ],
 
     'pagination' => [
@@ -94,6 +98,7 @@ return [
     'exception_to_status' => [
         AuthenticationException::class => 401,
         AuthorizationException::class  => 403,
+        ValidationException::class     => 422,
     ],
 
     'swagger_ui' => [
@@ -163,6 +168,13 @@ return [
     //     ],
     // ],
     'eloquent'   => [
-        'use_eloquent_serialization' => true,
+        'use_eloquent_serialization' => false,
     ],
 ];
+
+
+
+
+
+
+

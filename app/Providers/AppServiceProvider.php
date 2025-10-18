@@ -2,11 +2,14 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\ServiceProvider;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Observers\InventoryObserver;
 use App\Observers\OrderObserver;
-use Illuminate\Support\ServiceProvider;
+use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
+use ApiPlatform\State\ProcessorInterface;
+use App\ApiPlatform\State\EloquentPersistProcessor;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,7 +19,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
     }
 
     /**

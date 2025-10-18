@@ -2,23 +2,34 @@
 
 namespace App\Models;
 
+use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use App\Http\Requests\StoreWarehouseRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use ApiPlatform\Metadata\Get;
+use App\ApiPlatform\State\WarehouseProcessor;
 
 #[ApiResource(
     operations: [
         new GetCollection(),
-        new Post(),
         new Get(),
-        new Put(),
+        new Post(
+            input: StoreWarehouseRequest::class,
+            processor: WarehouseProcessor::class
+
+        ),
+        new Put(
+            input: StoreWarehouseRequest::class,
+            processor: WarehouseProcessor::class
+
+        ),
         new Delete(),
     ],
     security: "is_granted('ROLE_USER')"
@@ -38,6 +49,11 @@ class Warehouse extends Model
             'postal_code',
             'country',
             'status',
+        ];
+
+    protected $casts
+        = [
+            'status' => 'boolean',
         ];
 
     public function inventory(): HasMany

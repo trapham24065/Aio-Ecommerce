@@ -6,7 +6,31 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Filament\Notifications\Notification;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use App\Http\Requests\StoreCustomerRequest;
+use App\ApiPlatform\State\CustomerProcessor;
 
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Post(
+            input: StoreCustomerRequest::class,
+            processor: CustomerProcessor::class
+        ),
+        new Get(),
+        new Put(
+            input: StoreCustomerRequest::class,
+            processor: CustomerProcessor::class
+        ),
+        new Delete(),
+    ],
+    security: "is_granted('ROLE_USER')"
+)]
 class Customer extends Model
 {
 
@@ -46,3 +70,4 @@ class Customer extends Model
     }
 
 }
+

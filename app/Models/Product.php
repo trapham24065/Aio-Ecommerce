@@ -138,7 +138,7 @@ class Product extends Model
                 $product->brand_id = basename($product->brand);
             }
         });
-        static::updating(function (Product $product) {
+        static::updating(static function (Product $product) {
             if ($product->isDirty('type')) {
                 $originalType = $product->getOriginal('type');
 

@@ -11,13 +11,21 @@ use ApiPlatform\Metadata\Put;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Http\Requests\StoreBrandRequest;
+use App\ApiPlatform\State\BrandProcessor;
 
 #[ApiResource(
     operations: [
         new GetCollection(),
-        new Post(),
         new Get(),
-        new Put(),
+        new Post(
+            input: StoreBrandRequest::class,
+            processor: BrandProcessor::class
+        ),
+        new Put(
+            input: StoreBrandRequest::class,
+            processor: BrandProcessor::class
+        ),
         new Delete(),
     ],
     security: "is_granted('ROLE_USER')"
@@ -29,6 +37,11 @@ class Brand extends Model
 
     protected $fillable = ['code', 'name', 'status'];
 
+    protected $casts
+    = [
+        'status' => 'boolean',
+    ];
+
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
@@ -36,19 +49,21 @@ class Brand extends Model
 
     protected static function booted(): void
     {
-        static::deleting(function (Brand $brand) {
-            if ($brand->products()->exists()) {
-                Notification::make()
-                    ->title('Delete Failed')
-                    ->body('Cannot delete a brand that has associated products.')
-                    ->danger()
-                    ->send();
+        static::deleting(
+            function (Brand $brand) {
+                if ($brand->products()->exists()) {
+                    Notification::make()
+                        ->title('Delete Failed')
+                        ->body('Cannot delete a brand that has associated products.')
+                        ->danger()
+                        ->send();
 
-                return false;
+                    return false;
+                }
+                return true;
             }
-            return true;
-        }
         );
     }
-
 }
+
+
