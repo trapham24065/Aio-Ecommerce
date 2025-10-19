@@ -5,11 +5,11 @@ namespace App\ApiPlatform\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Illuminate\Validation\Rule;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
 use App\Http\Requests\StoreSupplierRequest;
 use App\Models\Supplier;
 use InvalidArgumentException;
+use Illuminate\Http\JsonResponse;
 
 final class SupplierProcessor implements ProcessorInterface
 {
@@ -24,19 +24,25 @@ final class SupplierProcessor implements ProcessorInterface
             $requestData = $request ? $request->all() : [];
 
             $rules = [
-                'name' => ['required', 'string', 'max:100'],
+                'name' => ['required', 'string', 'max:255'],
                 'code' => ['required', 'string', 'max:100'],
-                'home_url' => ['nullable', 'url', 'max:255'],
+                'email' => ['nullable', 'email', 'max:255'],
+                'phone' => ['nullable', 'string', 'max:20'],
+                'address' => ['nullable', 'string'],
                 'status' => ['required', 'boolean'],
             ];
 
             if ($operation->getMethod() === 'POST') {
-                $rules['name'][] = Rule::unique('suppliers');
                 $rules['code'][] = Rule::unique('suppliers');
+                if (!empty($requestData['email'])) {
+                    $rules['email'][] = Rule::unique('suppliers');
+                }
             } else {
                 $supplierId = $uriVariables['id'];
-                $rules['name'][] = Rule::unique('suppliers')->ignore($supplierId);
                 $rules['code'][] = Rule::unique('suppliers')->ignore($supplierId);
+                if (!empty($requestData['email'])) {
+                    $rules['email'][] = Rule::unique('suppliers')->ignore($supplierId);
+                }
             }
 
             $validator = \Validator::make($requestData, $rules);
@@ -64,7 +70,7 @@ final class SupplierProcessor implements ProcessorInterface
                     'status' => 422,
                 ];
 
-                throw new UnprocessableEntityHttpException(json_encode($errorResponse));
+                return new JsonResponse($errorResponse, 422);
             }
 
             $validated = $validator->validated();

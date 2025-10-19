@@ -4,11 +4,11 @@ namespace App\ApiPlatform\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
 use App\Http\Requests\StoreOrderRequest;
 use App\Models\Order;
 use InvalidArgumentException;
+use Illuminate\Http\JsonResponse;
 
 final class OrderProcessor implements ProcessorInterface
 {
@@ -59,7 +59,7 @@ final class OrderProcessor implements ProcessorInterface
                     'status' => 422,
                 ];
 
-                throw new UnprocessableEntityHttpException(json_encode($errorResponse));
+                return new JsonResponse($errorResponse, 422);
             }
 
             $validated = $validator->validated();
@@ -80,3 +80,5 @@ final class OrderProcessor implements ProcessorInterface
         return $this->persist->process($data, $operation, $uriVariables, $context);
     }
 }
+
+

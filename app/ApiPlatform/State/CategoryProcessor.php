@@ -5,11 +5,11 @@ namespace App\ApiPlatform\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Illuminate\Validation\Rule;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Models\Category;
 use InvalidArgumentException;
+use Illuminate\Http\JsonResponse;
 
 final class CategoryProcessor implements ProcessorInterface
 {
@@ -27,6 +27,7 @@ final class CategoryProcessor implements ProcessorInterface
                 'name' => ['required', 'string', 'max:100'],
                 'code' => ['required', 'string', 'max:100'],
                 'status' => ['required', 'boolean'],
+                'parent_id' => ['nullable', 'exists:categories,id'],
             ];
 
             if ($operation->getMethod() === 'POST') {
@@ -63,7 +64,7 @@ final class CategoryProcessor implements ProcessorInterface
                     'status' => 422,
                 ];
 
-                throw new UnprocessableEntityHttpException(json_encode($errorResponse));
+                return new JsonResponse($errorResponse, 422);
             }
 
             $validated = $validator->validated();
@@ -88,3 +89,4 @@ final class CategoryProcessor implements ProcessorInterface
         return $this->persist->process($data, $operation, $uriVariables, $context);
     }
 }
+

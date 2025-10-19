@@ -4,47 +4,51 @@ namespace App\ApiPlatform\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
-use App\Http\Requests\StoreWarehouseRequest;
-use App\Models\Warehouse;
-use \InvalidArgumentException;
+use App\Http\Requests\StoreProductRequest;
+use App\Models\Product;
+use InvalidArgumentException;
 use Illuminate\Http\JsonResponse;
 
-final class WarehouseProcessor implements ProcessorInterface
+final class ProductProcessor implements ProcessorInterface
 {
-
     public function __construct(private PersistProcessor $persist)
     {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
     {
-        if ($data instanceof StoreWarehouseRequest) {
+        if ($data instanceof StoreProductRequest) {
             $request = $context['request'] ?? null;
             $requestData = $request ? $request->all() : [];
 
             $rules = [
-                'name'        => ['required', 'string', 'max:100'],
-                'code'        => ['required', 'string', 'max:50'],
-                'street'      => ['nullable', 'string'],
-                'city'        => ['required', 'string'],
-                'state'       => ['nullable', 'string'],
-                'postalCode'  => ['nullable', 'string'],
-                'postal_code' => ['nullable', 'string'],
-                'country'     => ['required', 'string'],
-                'status'      => ['required'],
+                'type' => ['required', 'in:simple,variant'],
+                'category_id' => ['required', 'exists:categories,id'],
+                'supplier_id' => ['nullable', 'exists:suppliers,id'],
+                'brand_id' => ['nullable', 'exists:brands,id'],
+                'name' => ['required', 'string', 'max:100'],
+                'sku' => ['required', 'string', 'max:100'],
+                'description' => ['nullable', 'string', 'max:500'],
+                'thumbnail' => ['required', 'string'],
+                'base_cost' => ['required', 'numeric', 'min:1', 'max:9999999999999.99'],
+                'quantity' => ['nullable', 'integer', 'min:0'],
+                'flag' => ['nullable', 'integer'],
+                'status' => ['required', 'boolean'],
             ];
 
             if ($operation->getMethod() === 'POST') {
-                $rules['name'][] = Rule::unique('warehouses');
-                $rules['code'][] = Rule::unique('warehouses');
+                $rules['sku'][] = Rule::unique('products');
+                $rules['name'][] = Rule::unique('products')->where(function ($query) use ($requestData) {
+                    return $query->where('category_id', $requestData['category_id'] ?? null);
+                });
             } else {
-                $warehouseId = $uriVariables['id'];
-                $rules['name'][] = Rule::unique('warehouses')->ignore($warehouseId);
-                $rules['code'][] = Rule::unique('warehouses')->ignore($warehouseId);
+                $productId = $uriVariables['id'];
+                $rules['sku'][] = Rule::unique('products')->ignore($productId);
+                $rules['name'][] = Rule::unique('products')->ignore($productId)->where(function ($query) use ($requestData) {
+                    return $query->where('category_id', $requestData['category_id'] ?? null);
+                });
             }
 
             $validator = \Validator::make($requestData, $rules);
@@ -58,18 +62,18 @@ final class WarehouseProcessor implements ProcessorInterface
                     foreach ($messages as $message) {
                         $violations[] = [
                             'propertyPath' => $field,
-                            'message'      => $message,
+                            'message' => $message,
                         ];
                         $detailMessages[] = "{$field}: {$message}";
                     }
                 }
 
                 $errorResponse = [
-                    'type'       => 'https://tools.ietf.org/html/rfc2616#section-10',
-                    'title'      => 'An error occurred',
-                    'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
+                    'type' => 'https://tools.ietf.org/html/rfc2616#section-10',
+                    'title' => 'An error occurred',
+                    'detail' => 'Validation errors: ' . implode('; ', $detailMessages),
                     'violations' => $violations,
-                    'status'     => 422,
+                    'status' => 422,
                 ];
 
                 return new JsonResponse($errorResponse, 422);
@@ -77,22 +81,16 @@ final class WarehouseProcessor implements ProcessorInterface
 
             $validated = $validator->validated();
 
-            if (isset($validated['postalCode']) && !isset($validated['postal_code'])) {
-                $validated['postal_code'] = $validated['postalCode'];
-                unset($validated['postalCode']);
-            }
-
             if (isset($validated['status'])) {
                 $validated['status'] = filter_var($validated['status'], FILTER_VALIDATE_BOOLEAN);
             }
 
             if ($operation->getMethod() === 'POST') {
-                $model = new Warehouse($validated);
+                $model = new Product($validated);
             } else {
-                /** @var \App\Models\Warehouse|null $model */
                 $model = $context['previous_data'] ?? null;
                 if (!$model) {
-                    throw new InvalidArgumentException('Warehouse not found in previous_data context.');
+                    throw new InvalidArgumentException('Product not found in previous_data context.');
                 }
                 $model->fill($validated);
             }
@@ -102,6 +100,4 @@ final class WarehouseProcessor implements ProcessorInterface
 
         return $this->persist->process($data, $operation, $uriVariables, $context);
     }
-
 }
-

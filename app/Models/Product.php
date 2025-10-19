@@ -16,13 +16,21 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
+use App\Http\Requests\StoreProductRequest;
+use App\ApiPlatform\State\ProductProcessor;
 
 #[ApiResource(
     operations: [
         new GetCollection(),
-        new Post(),
+        new Post(
+            input: StoreProductRequest::class,
+            processor: ProductProcessor::class
+        ),
         new Get(),
-        new Put(),
+        new Put(
+            input: StoreProductRequest::class,
+            processor: ProductProcessor::class
+        ),
         new Delete(),
     ],
     security: "is_granted('ROLE_USER')"
@@ -158,3 +166,4 @@ class Product extends Model
     }
 
 }
+

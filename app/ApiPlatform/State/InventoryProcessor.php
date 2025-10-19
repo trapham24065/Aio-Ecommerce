@@ -4,11 +4,11 @@ namespace App\ApiPlatform\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
 use App\Http\Requests\StoreInventoryRequest;
 use App\Models\Inventory;
 use InvalidArgumentException;
+use Illuminate\Http\JsonResponse;
 
 final class InventoryProcessor implements ProcessorInterface
 {
@@ -53,7 +53,7 @@ final class InventoryProcessor implements ProcessorInterface
                     'status' => 422,
                 ];
 
-                throw new UnprocessableEntityHttpException(json_encode($errorResponse));
+                return new JsonResponse($errorResponse, 422);
             }
 
             $validated = $validator->validated();

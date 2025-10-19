@@ -5,11 +5,11 @@ namespace App\ApiPlatform\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Illuminate\Validation\Rule;
-use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Models\Customer;
 use InvalidArgumentException;
+use Illuminate\Http\JsonResponse;
 
 final class CustomerProcessor implements ProcessorInterface
 {
@@ -62,7 +62,7 @@ final class CustomerProcessor implements ProcessorInterface
                     'status' => 422,
                 ];
 
-                throw new UnprocessableEntityHttpException(json_encode($errorResponse));
+                return new JsonResponse($errorResponse, 422);
             }
 
             $validated = $validator->validated();
