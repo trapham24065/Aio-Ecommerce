@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 
 final class ProductProcessor implements ProcessorInterface
 {
+
     public function __construct(private PersistProcessor $persist)
     {
     }
@@ -24,18 +25,18 @@ final class ProductProcessor implements ProcessorInterface
             $requestData = $request ? $request->all() : [];
 
             $rules = [
-                'type' => ['required', 'in:simple,variant'],
+                'type'        => ['required', 'in:simple,variant'],
                 'category_id' => ['required', 'exists:categories,id'],
                 'supplier_id' => ['nullable', 'exists:suppliers,id'],
-                'brand_id' => ['nullable', 'exists:brands,id'],
-                'name' => ['required', 'string', 'max:100'],
-                'sku' => ['required', 'string', 'max:100'],
+                'brand_id'    => ['nullable', 'exists:brands,id'],
+                'name'        => ['required', 'string', 'max:100'],
+                'sku'         => ['required', 'string', 'max:100'],
                 'description' => ['nullable', 'string', 'max:500'],
-                'thumbnail' => ['required', 'string'],
-                'base_cost' => ['required', 'numeric', 'min:1', 'max:9999999999999.99'],
-                'quantity' => ['nullable', 'integer', 'min:0'],
-                'flag' => ['nullable', 'integer'],
-                'status' => ['required', 'boolean'],
+                'thumbnail'   => ['required', 'string'],
+                'base_cost'   => ['required', 'numeric', 'min:1', 'max:9999999999999.99'],
+                'quantity'    => ['nullable', 'integer', 'min:0'],
+                'flag'        => ['nullable', 'integer'],
+                'status'      => ['required', 'boolean'],
             ];
 
             if ($operation->getMethod() === 'POST') {
@@ -46,9 +47,11 @@ final class ProductProcessor implements ProcessorInterface
             } else {
                 $productId = $uriVariables['id'];
                 $rules['sku'][] = Rule::unique('products')->ignore($productId);
-                $rules['name'][] = Rule::unique('products')->ignore($productId)->where(function ($query) use ($requestData) {
-                    return $query->where('category_id', $requestData['category_id'] ?? null);
-                });
+                $rules['name'][] = Rule::unique('products')->ignore($productId)->where(
+                    function ($query) use ($requestData) {
+                        return $query->where('category_id', $requestData['category_id'] ?? null);
+                    }
+                );
             }
 
             $validator = \Validator::make($requestData, $rules);
@@ -62,18 +65,17 @@ final class ProductProcessor implements ProcessorInterface
                     foreach ($messages as $message) {
                         $violations[] = [
                             'propertyPath' => $field,
-                            'message' => $message,
+                            'message'      => $message,
                         ];
                         $detailMessages[] = "{$field}: {$message}";
                     }
                 }
 
                 $errorResponse = [
-                    'type' => 'https://tools.ietf.org/html/rfc2616#section-10',
-                    'title' => 'An error occurred',
-                    'detail' => 'Validation errors: ' . implode('; ', $detailMessages),
+                    'title'      => 'An error occurred',
+                    'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,
-                    'status' => 422,
+                    'status'     => 422,
                 ];
 
                 return new JsonResponse($errorResponse, 422);
@@ -100,4 +102,5 @@ final class ProductProcessor implements ProcessorInterface
 
         return $this->persist->process($data, $operation, $uriVariables, $context);
     }
+
 }

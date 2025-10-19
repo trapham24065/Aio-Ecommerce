@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 
 final class OrderProcessor implements ProcessorInterface
 {
+
     public function __construct(private PersistProcessor $persist)
     {
     }
@@ -23,15 +24,15 @@ final class OrderProcessor implements ProcessorInterface
             $requestData = $request ? $request->all() : [];
 
             $rules = [
-                'customer_id' => ['required', 'exists:customers,id'],
-                'status' => ['required', 'in:pending,processing,delivered,cancelled'],
-                'currency' => ['required', 'string', 'max:3'],
-                'subtotal' => ['required', 'numeric', 'min:0'],
-                'shipping_fee' => ['nullable', 'numeric', 'min:0'],
-                'tax_amount' => ['nullable', 'numeric', 'min:0'],
+                'customer_id'     => ['required', 'exists:customers,id'],
+                'status'          => ['required', 'in:pending,processing,delivered,cancelled'],
+                'currency'        => ['required', 'string', 'max:3'],
+                'subtotal'        => ['required', 'numeric', 'min:0'],
+                'shipping_fee'    => ['nullable', 'numeric', 'min:0'],
+                'tax_amount'      => ['nullable', 'numeric', 'min:0'],
                 'discount_amount' => ['nullable', 'numeric', 'min:0'],
-                'grand_total' => ['required', 'numeric', 'min:0'],
-                'notes' => ['nullable', 'string'],
+                'grand_total'     => ['required', 'numeric', 'min:0'],
+                'notes'           => ['nullable', 'string'],
             ];
 
             $validator = \Validator::make($requestData, $rules);
@@ -45,18 +46,17 @@ final class OrderProcessor implements ProcessorInterface
                     foreach ($messages as $message) {
                         $violations[] = [
                             'propertyPath' => $field,
-                            'message' => $message,
+                            'message'      => $message,
                         ];
                         $detailMessages[] = "{$field}: {$message}";
                     }
                 }
 
                 $errorResponse = [
-                    'type' => 'https://tools.ietf.org/html/rfc2616#section-10',
-                    'title' => 'An error occurred',
-                    'detail' => 'Validation errors: ' . implode('; ', $detailMessages),
+                    'title'      => 'An error occurred',
+                    'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,
-                    'status' => 422,
+                    'status'     => 422,
                 ];
 
                 return new JsonResponse($errorResponse, 422);
@@ -79,6 +79,7 @@ final class OrderProcessor implements ProcessorInterface
 
         return $this->persist->process($data, $operation, $uriVariables, $context);
     }
+
 }
 
 

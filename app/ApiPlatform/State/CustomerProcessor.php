@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 
 final class CustomerProcessor implements ProcessorInterface
 {
+
     public function __construct(private PersistProcessor $persist)
     {
     }
@@ -25,9 +26,9 @@ final class CustomerProcessor implements ProcessorInterface
 
             $rules = [
                 'first_name' => ['required', 'string', 'max:100'],
-                'last_name' => ['required', 'string', 'max:100'],
-                'email' => ['required', 'email', 'max:255'],
-                'phone' => ['nullable', 'string', 'max:20'],
+                'last_name'  => ['required', 'string', 'max:100'],
+                'email'      => ['required', 'email', 'max:255'],
+                'phone'      => ['nullable', 'string', 'max:20'],
             ];
 
             if ($operation->getMethod() === 'POST') {
@@ -48,18 +49,17 @@ final class CustomerProcessor implements ProcessorInterface
                     foreach ($messages as $message) {
                         $violations[] = [
                             'propertyPath' => $field,
-                            'message' => $message,
+                            'message'      => $message,
                         ];
                         $detailMessages[] = "{$field}: {$message}";
                     }
                 }
 
                 $errorResponse = [
-                    'type' => 'https://tools.ietf.org/html/rfc2616#section-10',
-                    'title' => 'An error occurred',
-                    'detail' => 'Validation errors: ' . implode('; ', $detailMessages),
+                    'title'      => 'An error occurred',
+                    'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,
-                    'status' => 422,
+                    'status'     => 422,
                 ];
 
                 return new JsonResponse($errorResponse, 422);
@@ -82,4 +82,5 @@ final class CustomerProcessor implements ProcessorInterface
 
         return $this->persist->process($data, $operation, $uriVariables, $context);
     }
+
 }

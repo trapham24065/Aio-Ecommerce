@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 
 final class SupplierProcessor implements ProcessorInterface
 {
+
     public function __construct(private PersistProcessor $persist)
     {
     }
@@ -24,12 +25,12 @@ final class SupplierProcessor implements ProcessorInterface
             $requestData = $request ? $request->all() : [];
 
             $rules = [
-                'name' => ['required', 'string', 'max:255'],
-                'code' => ['required', 'string', 'max:100'],
-                'email' => ['nullable', 'email', 'max:255'],
-                'phone' => ['nullable', 'string', 'max:20'],
+                'name'    => ['required', 'string', 'max:255'],
+                'code'    => ['required', 'string', 'max:100'],
+                'email'   => ['nullable', 'email', 'max:255'],
+                'phone'   => ['nullable', 'string', 'max:20'],
                 'address' => ['nullable', 'string'],
-                'status' => ['required', 'boolean'],
+                'status'  => ['required', 'boolean'],
             ];
 
             if ($operation->getMethod() === 'POST') {
@@ -56,18 +57,17 @@ final class SupplierProcessor implements ProcessorInterface
                     foreach ($messages as $message) {
                         $violations[] = [
                             'propertyPath' => $field,
-                            'message' => $message,
+                            'message'      => $message,
                         ];
                         $detailMessages[] = "{$field}: {$message}";
                     }
                 }
 
                 $errorResponse = [
-                    'type' => 'https://tools.ietf.org/html/rfc2616#section-10',
-                    'title' => 'An error occurred',
-                    'detail' => 'Validation errors: ' . implode('; ', $detailMessages),
+                    'title'      => 'An error occurred',
+                    'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,
-                    'status' => 422,
+                    'status'     => 422,
                 ];
 
                 return new JsonResponse($errorResponse, 422);
@@ -94,4 +94,5 @@ final class SupplierProcessor implements ProcessorInterface
 
         return $this->persist->process($data, $operation, $uriVariables, $context);
     }
+
 }

@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 
 final class CategoryProcessor implements ProcessorInterface
 {
+
     public function __construct(private PersistProcessor $persist)
     {
     }
@@ -24,9 +25,9 @@ final class CategoryProcessor implements ProcessorInterface
             $requestData = $request ? $request->all() : [];
 
             $rules = [
-                'name' => ['required', 'string', 'max:100'],
-                'code' => ['required', 'string', 'max:100'],
-                'status' => ['required', 'boolean'],
+                'name'      => ['required', 'string', 'max:100'],
+                'code'      => ['required', 'string', 'max:100'],
+                'status'    => ['required', 'boolean'],
                 'parent_id' => ['nullable', 'exists:categories,id'],
             ];
 
@@ -50,18 +51,17 @@ final class CategoryProcessor implements ProcessorInterface
                     foreach ($messages as $message) {
                         $violations[] = [
                             'propertyPath' => $field,
-                            'message' => $message,
+                            'message'      => $message,
                         ];
                         $detailMessages[] = "{$field}: {$message}";
                     }
                 }
 
                 $errorResponse = [
-                    'type' => 'https://tools.ietf.org/html/rfc2616#section-10',
-                    'title' => 'An error occurred',
-                    'detail' => 'Validation errors: ' . implode('; ', $detailMessages),
+                    'title'      => 'An error occurred',
+                    'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,
-                    'status' => 422,
+                    'status'     => 422,
                 ];
 
                 return new JsonResponse($errorResponse, 422);
@@ -88,5 +88,6 @@ final class CategoryProcessor implements ProcessorInterface
 
         return $this->persist->process($data, $operation, $uriVariables, $context);
     }
+
 }
 
