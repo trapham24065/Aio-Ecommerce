@@ -368,12 +368,20 @@
     <strong>Chúc mừng 20-10</strong> <!--Sửa tiêu đề chúc mừng ở đây-->
     <span id="centerText">
             Ngày Phụ nữ Việt Nam<br> <!-- Sử lời nhắn hiển thị đầu ở đây-->
+<<<<<<< Updated upstream
             Mong mẹ và 2 chị luôn rạng rỡ như những bó hoa!
+=======
+            Anh mong em luôn thật vui vẻ , tươi cười và luôn luôn xinh đẹp
+>>>>>>> Stashed changes
         </span>
 </div>
 
 <!-- Ảnh động trang trí -->
+<<<<<<< Updated upstream
 <a href="/chucmung20t10/flower"><img src="{{asset('vendor/assets/mewmew.gif')}}" alt="GIF" class="center-gif"/></a>
+=======
+<a href="/emyeu/chucmung20t10/flower"><img src="{{asset('vendor/assets/mewmew.gif')}}" alt="GIF" class="center-gif"/></a>
+>>>>>>> Stashed changes
 <!-- Thay ảnh động bên dưới -->
 
 <!-- Hiển thị lời chúc -->
