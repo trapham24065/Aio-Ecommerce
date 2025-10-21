@@ -16,19 +16,19 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
-use App\Http\Requests\StoreProductRequest;
+use App\Dto\ProductInput;
 use App\ApiPlatform\State\ProductProcessor;
 
 #[ApiResource(
     operations: [
         new GetCollection(),
         new Post(
-            input: StoreProductRequest::class,
+            input: ProductInput::class,
             processor: ProductProcessor::class
         ),
         new Get(),
         new Put(
-            input: StoreProductRequest::class,
+            input: ProductInput::class,
             processor: ProductProcessor::class
         ),
         new Delete(),
@@ -166,4 +166,5 @@ class Product extends Model
     }
 
 }
+
 

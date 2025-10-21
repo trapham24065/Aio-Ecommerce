@@ -6,23 +6,47 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Illuminate\Validation\Rule;
 use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
-use App\Http\Requests\StoreProductRequest;
+use App\Dto\ProductInput;
 use App\Models\Product;
 use InvalidArgumentException;
 use Illuminate\Http\JsonResponse;
 
 final class ProductProcessor implements ProcessorInterface
 {
-
     public function __construct(private PersistProcessor $persist)
     {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
     {
-        if ($data instanceof StoreProductRequest) {
+        if ($data instanceof ProductInput) {
             $request = $context['request'] ?? null;
             $requestData = $request ? $request->all() : [];
+
+            // Auto-generate SKU from name if not provided
+            if (!empty($requestData['name']) && empty($requestData['sku'])) {
+                $name = $requestData['name'];
+                $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', '', $name);
+                $baseSku = \Str::slug($sanitized);
+                $baseSku = \Str::limit($baseSku, 100, '');
+                $baseSku = trim($baseSku, '-');
+                $baseSku = strtoupper($baseSku);
+
+                $finalSku = $baseSku;
+                $counter = 1;
+                $recordId = $uriVariables['id'] ?? null;
+
+                while (
+                    Product::where('sku', $finalSku)
+                        ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
+                        ->exists()
+                ) {
+                    $counter++;
+                    $finalSku = $baseSku.'-'.$counter;
+                }
+
+                $requestData['sku'] = $finalSku;
+            }
 
             $rules = [
                 'type'        => ['required', 'in:simple,variant'],
@@ -47,11 +71,9 @@ final class ProductProcessor implements ProcessorInterface
             } else {
                 $productId = $uriVariables['id'];
                 $rules['sku'][] = Rule::unique('products')->ignore($productId);
-                $rules['name'][] = Rule::unique('products')->ignore($productId)->where(
-                    function ($query) use ($requestData) {
-                        return $query->where('category_id', $requestData['category_id'] ?? null);
-                    }
-                );
+                $rules['name'][] = Rule::unique('products')->ignore($productId)->where(function ($query) use ($requestData) {
+                    return $query->where('category_id', $requestData['category_id'] ?? null);
+                });
             }
 
             $validator = \Validator::make($requestData, $rules);
@@ -72,6 +94,7 @@ final class ProductProcessor implements ProcessorInterface
                 }
 
                 $errorResponse = [
+                    'type'       => 'https://tools.ietf.org/html/rfc2616#section-10',
                     'title'      => 'An error occurred',
                     'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,
@@ -102,5 +125,5 @@ final class ProductProcessor implements ProcessorInterface
 
         return $this->persist->process($data, $operation, $uriVariables, $context);
     }
-
 }
+

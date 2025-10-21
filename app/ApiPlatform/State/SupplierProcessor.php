@@ -6,7 +6,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Illuminate\Validation\Rule;
 use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
-use App\Http\Requests\StoreSupplierRequest;
+use App\Dto\SupplierInput;
 use App\Models\Supplier;
 use InvalidArgumentException;
 use Illuminate\Http\JsonResponse;
@@ -20,30 +20,48 @@ final class SupplierProcessor implements ProcessorInterface
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
     {
-        if ($data instanceof StoreSupplierRequest) {
+        if ($data instanceof SupplierInput) {
             $request = $context['request'] ?? null;
             $requestData = $request ? $request->all() : [];
 
+            // Auto-generate code from name if not provided
+            if (!empty($requestData['name']) && empty($requestData['code'])) {
+                $name = $requestData['name'];
+                $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', '', $name);
+                $baseCode = \Str::slug($sanitized);
+                $baseCode = \Str::limit($baseCode, 100, '');
+                $baseCode = trim($baseCode, '-');
+
+                $finalCode = $baseCode;
+                $counter = 1;
+                $recordId = $uriVariables['id'] ?? null;
+
+                while (
+                    Supplier::where('code', $finalCode)
+                        ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
+                        ->exists()
+                ) {
+                    $counter++;
+                    $finalCode = $baseCode.'-'.$counter;
+                }
+
+                $requestData['code'] = $finalCode;
+            }
+
             $rules = [
-                'name'    => ['required', 'string', 'max:255'],
-                'code'    => ['required', 'string', 'max:100'],
-                'email'   => ['nullable', 'email', 'max:255'],
-                'phone'   => ['nullable', 'string', 'max:20'],
-                'address' => ['nullable', 'string'],
-                'status'  => ['required', 'boolean'],
+                'name'     => ['required', 'string', 'max:100'],
+                'code'     => ['required', 'string', 'max:100'],
+                'home_url' => ['nullable', 'url', 'max:255'],
+                'status'   => ['required', 'boolean'],
             ];
 
             if ($operation->getMethod() === 'POST') {
+                $rules['name'][] = Rule::unique('suppliers');
                 $rules['code'][] = Rule::unique('suppliers');
-                if (!empty($requestData['email'])) {
-                    $rules['email'][] = Rule::unique('suppliers');
-                }
             } else {
                 $supplierId = $uriVariables['id'];
+                $rules['name'][] = Rule::unique('suppliers')->ignore($supplierId);
                 $rules['code'][] = Rule::unique('suppliers')->ignore($supplierId);
-                if (!empty($requestData['email'])) {
-                    $rules['email'][] = Rule::unique('suppliers')->ignore($supplierId);
-                }
             }
 
             $validator = \Validator::make($requestData, $rules);
@@ -64,6 +82,7 @@ final class SupplierProcessor implements ProcessorInterface
                 }
 
                 $errorResponse = [
+                    'type'       => 'https://tools.ietf.org/html/rfc2616#section-10',
                     'title'      => 'An error occurred',
                     'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,
@@ -96,3 +115,4 @@ final class SupplierProcessor implements ProcessorInterface
     }
 
 }
+

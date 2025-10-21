@@ -12,6 +12,7 @@ use App\Http\Requests\StoreWarehouseRequest;
 use App\Models\Warehouse;
 use \InvalidArgumentException;
 use Illuminate\Http\JsonResponse;
+use App\Dto\WarehouseInput;
 
 final class WarehouseProcessor implements ProcessorInterface
 {
@@ -22,9 +23,34 @@ final class WarehouseProcessor implements ProcessorInterface
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
     {
-        if ($data instanceof StoreWarehouseRequest) {
+        if ($data instanceof WarehouseInput) {
             $request = $context['request'] ?? null;
             $requestData = $request ? $request->all() : [];
+
+            // Auto-generate code from name if not provided
+            if (!empty($requestData['name']) && empty($requestData['code'])) {
+                $name = $requestData['name'];
+                $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', '', $name);
+                $baseCode = \Str::slug($sanitized);
+                $baseCode = \Str::limit($baseCode, 50, '');
+                $baseCode = trim($baseCode, '-');
+                $baseCode = strtoupper($baseCode);
+
+                $finalCode = $baseCode;
+                $counter = 1;
+                $recordId = $uriVariables['id'] ?? null;
+
+                while (
+                    Warehouse::where('code', $finalCode)
+                        ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
+                        ->exists()
+                ) {
+                    $counter++;
+                    $finalCode = $baseCode.'-'.$counter;
+                }
+
+                $requestData['code'] = $finalCode;
+            }
 
             $rules = [
                 'name'        => ['required', 'string', 'max:100'],
@@ -103,4 +129,5 @@ final class WarehouseProcessor implements ProcessorInterface
     }
 
 }
+
 

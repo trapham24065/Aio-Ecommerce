@@ -11,19 +11,19 @@ use ApiPlatform\Metadata\Put;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Filament\Notifications\Notification;
-use App\Http\Requests\StoreCategoryRequest;
+use App\Dto\CategoryInput;
 use App\ApiPlatform\State\CategoryProcessor;
 
 #[ApiResource(
     operations: [
         new GetCollection(),
         new Post(
-            input: StoreCategoryRequest::class,
+            input: CategoryInput::class,
             processor: CategoryProcessor::class
         ),
         new Get(),
         new Put(
-            input: StoreCategoryRequest::class,
+            input: CategoryInput::class,
             processor: CategoryProcessor::class
         ),
         new Delete(),
@@ -58,4 +58,5 @@ class Category extends Model
     }
 
 }
+
 

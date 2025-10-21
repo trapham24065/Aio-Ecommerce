@@ -8,10 +8,10 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use App\Dto\BrandInput;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Http\Requests\StoreBrandRequest;
 use App\ApiPlatform\State\BrandProcessor;
 
 #[ApiResource(
@@ -19,11 +19,11 @@ use App\ApiPlatform\State\BrandProcessor;
         new GetCollection(),
         new Get(),
         new Post(
-            input: StoreBrandRequest::class,
+            input: BrandInput::class,
             processor: BrandProcessor::class
         ),
         new Put(
-            input: StoreBrandRequest::class,
+            input: BrandInput::class,
             processor: BrandProcessor::class
         ),
         new Delete(),
@@ -38,9 +38,9 @@ class Brand extends Model
     protected $fillable = ['code', 'name', 'status'];
 
     protected $casts
-    = [
-        'status' => 'boolean',
-    ];
+        = [
+            'status' => 'boolean',
+        ];
 
     public function products(): HasMany
     {
@@ -64,6 +64,8 @@ class Brand extends Model
             }
         );
     }
+
 }
+
 
 

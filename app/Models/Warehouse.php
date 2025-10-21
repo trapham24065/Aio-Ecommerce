@@ -15,20 +15,19 @@ use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use ApiPlatform\Metadata\Get;
 use App\ApiPlatform\State\WarehouseProcessor;
+use App\Dto\WarehouseInput;
 
 #[ApiResource(
     operations: [
         new GetCollection(),
-        new Get(),
         new Post(
-            input: StoreWarehouseRequest::class,
+            input: WarehouseInput::class,
             processor: WarehouseProcessor::class
-
         ),
+        new Get(),
         new Put(
-            input: StoreWarehouseRequest::class,
+            input: WarehouseInput::class,
             processor: WarehouseProcessor::class
-
         ),
         new Delete(),
     ],
@@ -88,3 +87,4 @@ class Warehouse extends Model
     }
 
 }
+

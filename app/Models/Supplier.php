@@ -11,19 +11,19 @@ use ApiPlatform\Metadata\Put;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Http\Requests\StoreSupplierRequest;
+use App\Dto\SupplierInput;
 use App\ApiPlatform\State\SupplierProcessor;
 
 #[ApiResource(
     operations: [
         new GetCollection(),
         new Post(
-            input: StoreSupplierRequest::class,
+            input: SupplierInput::class,
             processor: SupplierProcessor::class
         ),
         new Get(),
         new Put(
-            input: StoreSupplierRequest::class,
+            input: SupplierInput::class,
             processor: SupplierProcessor::class
         ),
         new Delete(),
@@ -60,4 +60,5 @@ class Supplier extends Model
     }
 
 }
+
 

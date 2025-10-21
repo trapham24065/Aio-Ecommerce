@@ -6,7 +6,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use Illuminate\Validation\Rule;
 use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
-use App\Http\Requests\StoreCategoryRequest;
+use App\Dto\CategoryInput;
 use App\Models\Category;
 use InvalidArgumentException;
 use Illuminate\Http\JsonResponse;
@@ -20,15 +20,38 @@ final class CategoryProcessor implements ProcessorInterface
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
     {
-        if ($data instanceof StoreCategoryRequest) {
+        if ($data instanceof CategoryInput) {
             $request = $context['request'] ?? null;
             $requestData = $request ? $request->all() : [];
 
+            // Auto-generate code from name if not provided
+            if (!empty($requestData['name']) && empty($requestData['code'])) {
+                $name = $requestData['name'];
+                $sanitized = preg_replace('/[^\p{L}\p{N}\s]/u', '', $name);
+                $baseCode = \Str::slug($sanitized);
+                $baseCode = \Str::limit($baseCode, 100, '');
+                $baseCode = trim($baseCode, '-');
+
+                $finalCode = $baseCode;
+                $counter = 1;
+                $recordId = $uriVariables['id'] ?? null;
+
+                while (
+                    Category::where('code', $finalCode)
+                        ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
+                        ->exists()
+                ) {
+                    $counter++;
+                    $finalCode = $baseCode.'-'.$counter;
+                }
+
+                $requestData['code'] = $finalCode;
+            }
+
             $rules = [
-                'name'      => ['required', 'string', 'max:100'],
-                'code'      => ['required', 'string', 'max:100'],
-                'status'    => ['required', 'boolean'],
-                'parent_id' => ['nullable', 'exists:categories,id'],
+                'name'   => ['required', 'string', 'max:100'],
+                'code'   => ['required', 'string', 'max:100'],
+                'status' => ['required', 'boolean'],
             ];
 
             if ($operation->getMethod() === 'POST') {
@@ -58,6 +81,7 @@ final class CategoryProcessor implements ProcessorInterface
                 }
 
                 $errorResponse = [
+                    'type'       => 'https://tools.ietf.org/html/rfc2616#section-10',
                     'title'      => 'An error occurred',
                     'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,
@@ -90,4 +114,5 @@ final class CategoryProcessor implements ProcessorInterface
     }
 
 }
+
 

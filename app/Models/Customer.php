@@ -12,19 +12,19 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use App\Http\Requests\StoreCustomerRequest;
+use App\Dto\CustomerInput;
 use App\ApiPlatform\State\CustomerProcessor;
 
 #[ApiResource(
     operations: [
         new GetCollection(),
         new Post(
-            input: StoreCustomerRequest::class,
+            input: CustomerInput::class,
             processor: CustomerProcessor::class
         ),
         new Get(),
         new Put(
-            input: StoreCustomerRequest::class,
+            input: CustomerInput::class,
             processor: CustomerProcessor::class
         ),
         new Delete(),
@@ -70,4 +70,6 @@ class Customer extends Model
     }
 
 }
+
+
 
