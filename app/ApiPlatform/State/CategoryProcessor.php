@@ -37,9 +37,9 @@ final class CategoryProcessor implements ProcessorInterface
                 $recordId = $uriVariables['id'] ?? null;
 
                 while (
-                    Category::where('code', $finalCode)
-                        ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
-                        ->exists()
+                Category::where('code', $finalCode)
+                    ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
+                    ->exists()
                 ) {
                     $counter++;
                     $finalCode = $baseCode.'-'.$counter;
@@ -81,7 +81,6 @@ final class CategoryProcessor implements ProcessorInterface
                 }
 
                 $errorResponse = [
-                    'type'       => 'https://tools.ietf.org/html/rfc2616#section-10',
                     'title'      => 'An error occurred',
                     'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,

@@ -56,7 +56,6 @@ final class CustomerProcessor implements ProcessorInterface
                 }
 
                 $errorResponse = [
-                    'type'       => 'https://tools.ietf.org/html/rfc2616#section-10',
                     'title'      => 'An error occurred',
                     'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,

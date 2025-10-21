@@ -18,6 +18,8 @@ use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
 use App\Dto\ProductInput;
 use App\ApiPlatform\State\ProductProcessor;
+use Illuminate\Database\Eloquent\Collection;
+use App\ApiPlatform\State\ProductProvider;
 
 #[ApiResource(
     operations: [
@@ -46,6 +48,7 @@ class Product extends Model
 
     protected $fillable
         = [
+            'id',
             'type',
             'category_id',
             'supplier_id',
@@ -61,8 +64,9 @@ class Product extends Model
         ];
 
     protected $casts
-        = [
-        ];
+        = [];
+
+    protected $with = ['variants.optionValues.productOption', 'options.values', 'images'];
 
     public function category(): BelongsTo
     {
@@ -166,5 +170,3 @@ class Product extends Model
     }
 
 }
-
-

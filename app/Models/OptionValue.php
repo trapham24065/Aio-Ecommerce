@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use ApiPlatform\Metadata\ApiResource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Symfony\Component\Serializer\Annotation\Groups;
 
+#[ApiResource]
 class OptionValue extends Model
 {
 
@@ -24,3 +27,5 @@ class OptionValue extends Model
     }
 
 }
+
+

@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use ApiPlatform\Metadata\ApiResource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Illuminate\Database\Eloquent\Collection;
 
+// #[ApiResource]
 class ProductOption extends Model
 {
 
@@ -24,3 +28,6 @@ class ProductOption extends Model
     }
 
 }
+
+
+

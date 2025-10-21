@@ -37,9 +37,9 @@ final class SupplierProcessor implements ProcessorInterface
                 $recordId = $uriVariables['id'] ?? null;
 
                 while (
-                    Supplier::where('code', $finalCode)
-                        ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
-                        ->exists()
+                Supplier::where('code', $finalCode)
+                    ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
+                    ->exists()
                 ) {
                     $counter++;
                     $finalCode = $baseCode.'-'.$counter;
@@ -82,7 +82,6 @@ final class SupplierProcessor implements ProcessorInterface
                 }
 
                 $errorResponse = [
-                    'type'       => 'https://tools.ietf.org/html/rfc2616#section-10',
                     'title'      => 'An error occurred',
                     'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
                     'violations' => $violations,
