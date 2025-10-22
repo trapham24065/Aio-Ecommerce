@@ -15,6 +15,7 @@ class ProductOption extends Model
 
     public $timestamps = false;
 
+    #[Groups(['product:read'])]
     protected $fillable = ['product_id', 'name'];
 
     public function product(): BelongsTo

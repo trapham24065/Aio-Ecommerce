@@ -14,21 +14,33 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Http\Requests\StoreGoodsReceiptRequest;
 use App\ApiPlatform\State\GoodsReceiptProcessor;
+use App\ApiPlatform\State\GoodsReceiptProvider;
+use Illuminate\Database\Eloquent\Collection;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(
     operations: [
-        new GetCollection(),
+        new GetCollection(
+            normalizationContext: ['groups' => ['receipt:list']],
+            provider: GoodsReceiptProvider::class
+        ),
         new Post(
+            denormalizationContext: ['groups' => ['receipt:write']],
             input: StoreGoodsReceiptRequest::class,
             processor: GoodsReceiptProcessor::class
         ),
-        new Get(),
+        new Get(
+            normalizationContext: ['groups' => ['receipt:detail:read']],
+            provider: GoodsReceiptProvider::class
+        ),
         new Put(
             input: StoreGoodsReceiptRequest::class,
             processor: GoodsReceiptProcessor::class
         ),
         new Delete(),
     ],
+    normalizationContext: ['groups' => ['receipt:read']],
+    denormalizationContext: ['groups' => ['receipt:write']],
     security: "is_granted('ROLE_USER')"
 )]
 class GoodsReceipt extends Model
@@ -37,19 +49,22 @@ class GoodsReceipt extends Model
     use HasFactory;
 
     protected $fillable
-        = [
-            'warehouse_id',
-            'supplier_id',
-            'code',
-            'notes',
-            'receipt_date',
-            'user_id',
-        ];
+    = [
+        'warehouse_id',
+        'supplier_id',
+        'code',
+        'notes',
+        'receipt_date',
+        'user_id',
+    ];
 
     protected $casts
-        = [
-            'receipt_date' => 'date',
-        ];
+    = [
+        'receipt_date' => 'date',
+    ];
+
+    #[Groups(['receipt:detail:read', 'receipt:write'])]
+    public ?Collection $items;
 
     public function items(): HasMany
     {
@@ -74,12 +89,11 @@ class GoodsReceipt extends Model
     protected static function booted(): void
     {
         static::creating(function (GoodsReceipt $receipt) {
-            $receipt->code = 'GRN-'.now()->year.'-'.str_pad(self::count() + 1, 5, '0', STR_PAD_LEFT);
+            $receipt->code = 'GRN-' . now()->year . '-' . str_pad(self::count() + 1, 5, '0', STR_PAD_LEFT);
             if (auth()->check()) {
                 $receipt->user_id = auth()->id();
             }
         });
     }
-
 }
 

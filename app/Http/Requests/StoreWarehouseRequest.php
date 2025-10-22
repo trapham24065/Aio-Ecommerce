@@ -38,9 +38,9 @@ class StoreWarehouseRequest extends FormRequest
                 'max:50',
                 Rule::unique('warehouses')->ignore($warehouseId),
             ],
-            'street'  => ['nullable', 'string'],
-            'city'    => ['required', 'string'],
-            'country' => ['required', 'string'],
+            'street'  => ['nullable', 'string', 'max:300'],
+            'city'    => ['required', 'string', 'max:100'],
+            'country' => ['required', 'string', 'max:100'],
             'status'  => ['required', 'boolean'],
         ];
     }

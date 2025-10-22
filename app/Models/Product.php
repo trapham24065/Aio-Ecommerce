@@ -23,10 +23,11 @@ use App\ApiPlatform\State\ProductProvider;
 
 #[ApiResource(
     operations: [
-        new GetCollection(),
+        new GetCollection(normalizationContext: ['groups' => ['product:list']]),
         new Post(
             input: ProductInput::class,
             processor: ProductProcessor::class
+
         ),
         new Get(),
         new Put(
@@ -46,6 +47,7 @@ class Product extends Model
 
     public const TYPE_VARIANT = 'variant';
 
+    #[Groups(['product:read'])]
     protected $fillable
         = [
             'id',
@@ -66,7 +68,16 @@ class Product extends Model
     protected $casts
         = [];
 
-    protected $with = ['variants.optionValues.productOption', 'options.values', 'images'];
+    protected $with
+        = [
+            'brand',
+            'category',
+            'supplier',
+            'variants.optionValues.productOption',
+            'variants.images',
+            'options.values',
+            'images',
+        ];
 
     public function category(): BelongsTo
     {

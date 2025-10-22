@@ -41,9 +41,9 @@ final class WarehouseProcessor implements ProcessorInterface
                 $recordId = $uriVariables['id'] ?? null;
 
                 while (
-                    Warehouse::where('code', $finalCode)
-                        ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
-                        ->exists()
+                Warehouse::where('code', $finalCode)
+                    ->when($recordId, fn($query) => $query->where('id', '!=', $recordId))
+                    ->exists()
                 ) {
                     $counter++;
                     $finalCode = $baseCode.'-'.$counter;
@@ -55,12 +55,12 @@ final class WarehouseProcessor implements ProcessorInterface
             $rules = [
                 'name'        => ['required', 'string', 'max:100'],
                 'code'        => ['required', 'string', 'max:50'],
-                'street'      => ['nullable', 'string'],
-                'city'        => ['required', 'string'],
-                'state'       => ['nullable', 'string'],
-                'postalCode'  => ['nullable', 'string'],
-                'postal_code' => ['nullable', 'string'],
-                'country'     => ['required', 'string'],
+                'street'      => ['nullable', 'string', 'max:300'],
+                'city'        => ['required', 'string', 'max:100'],
+                'state'       => ['nullable', 'string', 'max:100'],
+                'postalCode'  => ['nullable', 'string', 'max:100'],
+                'postal_code' => ['nullable', 'string', 'max:100'],
+                'country'     => ['required', 'string', 'max:100'],
                 'status'      => ['required'],
             ];
 

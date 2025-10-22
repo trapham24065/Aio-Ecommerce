@@ -16,6 +16,7 @@ class ProductImage extends Model
 
     public $timestamps = false;
 
+    #[Groups(['product:read'])]
     protected $fillable
         = [
             'product_id',

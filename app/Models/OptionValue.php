@@ -14,7 +14,17 @@ class OptionValue extends Model
 
     public $timestamps = false;
 
+    #[Groups(['product:read'])]
     protected $fillable = ['product_option_id', 'value'];
+
+    #[Groups(['product:read'])]
+    public $id;
+
+    #[Groups(['product:read'])]
+    public $value;
+
+    #[Groups(['product:read'])]
+    public $productOption;
 
     public function productOption(): BelongsTo
     {
