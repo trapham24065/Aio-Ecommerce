@@ -79,6 +79,18 @@ class Product extends Model
             'images',
         ];
 
+    #[Groups(['product:read', 'receipt:detail:read'])]
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    #[Groups(['product:read', 'receipt:detail:read'])]
+    public function getSku()
+    {
+        return $this->sku;
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

@@ -34,10 +34,11 @@ return [
     ],
 
     'formats' => [
-        'jsonld' => ['application/ld+json'],
-        'json'   => ['application/json'],
-        // 'jsonapi' => ['application/vnd.api+json'],
-        // 'csv' => ['text/csv'],
+        'jsonld'  => ['application/ld+json'],
+        'json'    => ['application/json'],
+        'jsonapi' => ['application/vnd.api+json'],
+        'html'    => ['text/html'],
+        'csv'     => ['text/csv'],
     ],
 
     'patch_formats' => [

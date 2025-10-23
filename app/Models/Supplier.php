@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Dto\SupplierInput;
 use App\ApiPlatform\State\SupplierProcessor;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(
     operations: [
@@ -36,6 +37,30 @@ class Supplier extends Model
     public $timestamps = false;
 
     protected $fillable = ['code', 'name', 'home_url', 'status'];
+
+    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    public function getHomeUrl()
+    {
+        return $this->home_url;
+    }
+
+    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    public function getStatus()
+    {
+        return $this->status;
+    }
 
     public function products(): HasMany
     {

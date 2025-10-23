@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use ApiPlatform\Metadata\Get;
 use App\ApiPlatform\State\WarehouseProcessor;
 use App\Dto\WarehouseInput;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(
     operations: [
@@ -54,6 +55,42 @@ class Warehouse extends Model
         = [
             'status' => 'boolean',
         ];
+
+    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    #[Groups(['receipt:detail:read'])]
+    public function getCode()
+    {
+        return $this->code;
+    }
+
+    #[Groups(['receipt:detail:read'])]
+    public function getCity()
+    {
+        return $this->city;
+    }
+
+    #[Groups(['receipt:detail:read'])]
+    public function getCountry()
+    {
+        return $this->country;
+    }
+
+    #[Groups(['receipt:detail:read'])]
+    public function getStatus()
+    {
+        return $this->status;
+    }
 
     public function inventory(): HasMany
     {
