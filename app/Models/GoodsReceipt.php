@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\ApiPlatform\State\GoodsReceiptProvider;
 use App\Dto\GoodsReceiptInput;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,20 +21,22 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
 #[ApiResource(
     operations: [
         new GetCollection(
-            normalizationContext: ['groups' => ['receipt:list']]
+            normalizationContext: ['groups' => ['receipt:list']],
+            provider: GoodsReceiptProvider::class
+        ),
+        new Get(
+            normalizationContext: ['groups' => ['receipt:detail:read']],
+            provider: GoodsReceiptProvider::class
         ),
         new Post(
             normalizationContext: ['groups' => ['receipt:detail:read']],
             input: GoodsReceiptInput::class,
             processor: GoodsReceiptProcessor::class
         ),
-        new Get(
-            normalizationContext: ['groups' => ['receipt:detail:read']]
-        ),
         new Put(
             denormalizationContext: ['groups' => ['receipt:write']],
             input: GoodsReceiptInput::class,
-            processor: GoodsReceiptProcessor::class,
+            processor: GoodsReceiptProcessor::class
         ),
         new Delete(),
     ],
@@ -61,10 +64,7 @@ class GoodsReceipt extends Model
             'receipt_date' => 'date',
         ];
 
-    // eager load relations
     protected $with = ['items', 'warehouse', 'supplier', 'user'];
-
-    protected $appends = [];
 
     #[Groups(['receipt:detail:read', 'receipt:list'])]
     public function getId()
@@ -73,6 +73,7 @@ class GoodsReceipt extends Model
     }
 
     #[Groups(['receipt:detail:read', 'receipt:list'])]
+    #[SerializedName('code')]
     public function getCode()
     {
         return $this->code;
@@ -110,7 +111,7 @@ class GoodsReceipt extends Model
         return $this->status;
     }
 
-    public function items(): HasMany
+    public function items(): HasMany|GoodsReceipt
     {
         return $this->hasMany(GoodsReceiptItem::class);
     }
@@ -130,10 +131,19 @@ class GoodsReceipt extends Model
         return $this->belongsTo(User::class);
     }
 
-    #[Groups(['receipt:detail:read'])]
+    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    #[SerializedName('items')]
     public function getItems()
     {
-        return $this->items()->with('productVariant')->get();
+        $this->loadMissing('items.productVariant');
+
+        return $this->items->map(function ($item) {
+            return [
+                'id'       => $item->id,
+                'sku'      => $item->product_variant_sku ?? optional($item->productVariant)->sku,
+                'quantity' => $item->quantity,
+            ];
+        });
     }
 
     #[Groups(['receipt:detail:read'])]

@@ -8,23 +8,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-#[ApiResource]
+#[ApiResource(
+    operations: [],
+    normalizationContext: ['groups' => ['product:detail:read', 'product:read']]
+)]
 class OptionValue extends Model
 {
 
     public $timestamps = false;
 
-    #[Groups(['product:read'])]
     protected $fillable = ['product_option_id', 'value'];
 
-    #[Groups(['product:read'])]
-    public $id;
+    #[Groups(['product:detail:read', 'product:read'])]
+    public function getId()
+    {
+        return $this->id;
+    }
 
-    #[Groups(['product:read'])]
-    public $value;
-
-    #[Groups(['product:read'])]
-    public $productOption;
+    #[Groups(['product:detail:read', 'product:read'])]
+    public function getValue()
+    {
+        return $this->value;
+    }
 
     public function productOption(): BelongsTo
     {

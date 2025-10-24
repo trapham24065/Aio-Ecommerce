@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -14,21 +15,30 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Dto\SupplierInput;
 use App\ApiPlatform\State\SupplierProcessor;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\SerializedName;
 
 #[ApiResource(
     operations: [
-        new GetCollection(),
+        new GetCollection(
+            normalizationContext: ['groups' => ['supplier:read']]
+        ),
         new Post(
+            denormalizationContext: ['groups' => ['supplier:write']],
             input: SupplierInput::class,
             processor: SupplierProcessor::class
         ),
-        new Get(),
+        new Get(
+            normalizationContext: ['groups' => ['supplier:read']]
+        ),
         new Put(
+            denormalizationContext: ['groups' => ['supplier:write']],
             input: SupplierInput::class,
             processor: SupplierProcessor::class
         ),
         new Delete(),
     ],
+    normalizationContext: ['groups' => ['supplier:read']],
+    denormalizationContext: ['groups' => ['supplier:write']],
     security: "is_granted('ROLE_USER')"
 )]
 class Supplier extends Model
@@ -38,25 +48,43 @@ class Supplier extends Model
 
     protected $fillable = ['code', 'name', 'home_url', 'status'];
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    protected $casts
+        = [
+            'status' => 'boolean',
+        ];
+
+    protected $appends = ['home_url'];
+
+    // ✅ Gắn đúng group 'supplier:read' (có thể kèm receipt:* nếu muốn dùng chung)
+    #[Groups(['supplier:read', 'receipt:detail:read', 'receipt:list'])]
     public function getId()
     {
         return $this->id;
     }
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    #[Groups(['supplier:read', 'receipt:detail:read', 'receipt:list'])]
+    public function getCode()
+    {
+        return $this->code;
+    }
+
+    #[Groups(['supplier:read', 'receipt:detail:read', 'receipt:list'])]
     public function getName()
     {
         return $this->name;
     }
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
-    public function getHomeUrl()
+    // Nếu muốn key là snake_case 'home_url', giữ SerializedName như dưới.
+    // Nếu chấp nhận camelCase, bỏ SerializedName đi.
+    #[Groups(['supplier:read'])]
+    #[ApiProperty(readable: true)]
+    #[SerializedName('home_url')]
+    public function getHomeUrl(): ?string
     {
         return $this->home_url;
     }
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    #[Groups(['supplier:read', 'receipt:detail:read', 'receipt:list'])]
     public function getStatus()
     {
         return $this->status;
@@ -76,14 +104,10 @@ class Supplier extends Model
                     ->body('Cannot delete a supplier that has associated products.')
                     ->danger()
                     ->send();
-
                 return false;
             }
             return true;
-        }
-        );
+        });
     }
 
 }
-
-

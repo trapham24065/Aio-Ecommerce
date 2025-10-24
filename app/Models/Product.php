@@ -19,21 +19,26 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use App\Dto\ProductInput;
 use App\ApiPlatform\State\ProductProcessor;
 use Illuminate\Database\Eloquent\Collection;
-use App\ApiPlatform\State\ProductProvider;
+use Symfony\Component\Serializer\Annotation\SerializedName;
 
 #[ApiResource(
     operations: [
         new GetCollection(normalizationContext: ['groups' => ['product:list']]),
-        new Post(
-            input: ProductInput::class,
-            processor: ProductProcessor::class
 
-        ),
-        new Get(),
-        new Put(
+        new Post(
+            denormalizationContext: ['groups' => ['product:write']],
             input: ProductInput::class,
             processor: ProductProcessor::class
         ),
+
+        new Get(normalizationContext: ['groups' => ['product:detail:read']]),
+
+        new Put(
+            denormalizationContext: ['groups' => ['product:write']],
+            input: ProductInput::class,
+            processor: ProductProcessor::class
+        ),
+
         new Delete(),
     ],
     security: "is_granted('ROLE_USER')"
@@ -47,7 +52,6 @@ class Product extends Model
 
     public const TYPE_VARIANT = 'variant';
 
-    #[Groups(['product:read'])]
     protected $fillable
         = [
             'id',
@@ -66,30 +70,12 @@ class Product extends Model
         ];
 
     protected $casts
-        = [];
-
-    protected $with
         = [
-            'brand',
-            'category',
-            'supplier',
-            'variants.optionValues.productOption',
-            'variants.images',
-            'options.values',
-            'images',
+            'status'    => 'boolean',
+            'base_cost' => 'float',
+            'quantity'  => 'integer',
+            'flag'      => 'integer',
         ];
-
-    #[Groups(['product:read', 'receipt:detail:read'])]
-    public function getId()
-    {
-        return $this->id;
-    }
-
-    #[Groups(['product:read', 'receipt:detail:read'])]
-    public function getSku()
-    {
-        return $this->sku;
-    }
 
     public function category(): BelongsTo
     {
@@ -192,4 +178,91 @@ class Product extends Model
         });
     }
 
+    #[Groups(['product:list', 'product:detail:read'])]
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    #[Groups(['product:list', 'product:detail:read'])]
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    #[Groups(['product:list', 'product:detail:read'])]
+    public function getSku()
+    {
+        return $this->sku;
+    }
+
+    #[Groups(['product:list', 'product:detail:read'])]
+    public function getQuantity()
+    {
+        return $this->quantity;
+    }
+
+    #[Groups(['product:list', 'product:detail:read', 'product:write'])]
+    public function getStatus(): ?bool
+    {
+        return isset($this->attributes['status']) ? (bool)$this->attributes['status'] : null;
+    }
+
+    #[Groups(['product:list', 'product:detail:read', 'product:write'])]
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    #[Groups(['product:detail:read', 'product:write'])]
+    public function getDescription(): ?string
+    {
+        return $this->attributes['description'] ?? null;
+    }
+
+    #[Groups(['product:detail:read', 'product:write'])]
+    public function getBaseCost(): ?float
+    {
+        return isset($this->attributes['base_cost']) ? (float)$this->attributes['base_cost'] : null;
+    }
+
+    #[Groups(['product:detail:read', 'product:write'])]
+    public function getCategory()
+    {
+        return $this->category()->first();
+    }
+
+    #[Groups(['product:detail:read'])]
+    public function getBrand()
+    {
+        return $this->brand()->first();
+    }
+
+    #[Groups(['product:detail:read'])]
+    public function getSupplier()
+    {
+        return $this->supplier()->first();
+    }
+
+    #[Groups(['product:detail:read'])]
+    public function getVariants()
+    {
+        return $this->variants()
+            ->with(['optionValues.productOption', 'images'])
+            ->get();
+    }
+
+    #[Groups(['product:detail:read'])]
+    public function getOptions()
+    {
+        return $this->options()->get();
+    }
+
+    #[Groups(['product:detail:read'])]
+    public function getImages()
+    {
+        return $this->images()->get();
+    }
+
 }
+

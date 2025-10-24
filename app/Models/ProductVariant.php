@@ -12,14 +12,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Illuminate\Database\Eloquent\Collection;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use Symfony\Component\Serializer\Annotation\SerializedName;
 
 #[ApiResource(
     operations: [
-        new GetCollection(normalizationContext: ['groups' => ['receipt:list']]),
-        new Get(normalizationContext: ['groups' => ['receipt:detail:read']]),
+        new GetCollection(normalizationContext: ['groups' => ['receipt:list', 'product:detail:read']],),
+        new Get(normalizationContext: ['groups' => ['receipt:detail:read', 'product:detail:read']],),
         new Post(),
         new Put(),
         new Delete(),
@@ -32,28 +32,50 @@ class ProductVariant extends Model
 
     protected $fillable = ['product_id', 'sku', 'price', 'quantity'];
 
-    #[Groups(['product:read', 'receipt:detail:read'])]
+    #[Groups(['product:read', 'receipt:detail:read', 'product:detail:read'])]
     public function getId()
     {
         return $this->id;
     }
 
-    #[Groups(['product:read', 'receipt:detail:read'])]
+    #[Groups(['product:read', 'receipt:detail:read', 'product:detail:read'])]
     public function getSku()
     {
         return $this->sku;
     }
 
-    #[Groups(['product:read', 'receipt:detail:read'])]
+    #[Groups(['product:read', 'receipt:detail:read', 'product:detail:read'])]
     public function getPrice()
     {
         return $this->price;
     }
 
-    #[Groups(['product:read', 'receipt:detail:read'])]
+    #[Groups(['product:read', 'receipt:detail:read', 'product:detail:read'])]
     public function getQuantity()
     {
         return $this->quantity;
+    }
+
+    #[Groups(['product:detail:read'])]
+    #[SerializedName('option_values')]
+    public function getOptionValuesData()
+    {
+        $this->loadMissing('optionValues.productOption');
+        
+        return $this->optionValues->map(fn($ov) => [
+            'id'     => $ov->id,
+            'value'  => $ov->value,
+            'option' => [
+                'id'   => optional($ov->productOption)->id,
+                'name' => optional($ov->productOption)->name,
+            ],
+        ]);
+    }
+
+    #[Groups(['product:detail:read'])]
+    public function getImages()
+    {
+        return $this->images()->get();
     }
 
     public function product(): BelongsTo
@@ -63,7 +85,12 @@ class ProductVariant extends Model
 
     public function optionValues(): BelongsToMany
     {
-        return $this->belongsToMany(OptionValue::class, 'variant_values', 'variant_id', 'option_value_id');
+        return $this->belongsToMany(
+            OptionValue::class,
+            'variant_values',
+            'variant_id',
+            'option_value_id'
+        ); // Bỏ withoutTimestamps()
     }
 
     public function getTotalStockAttribute(): int
@@ -81,7 +108,10 @@ class ProductVariant extends Model
         return $this->hasMany(ProductImage::class, 'product_variant_id');
     }
 
+    public function variantValues(): HasMany
+    {
+        return $this->hasMany(VariantValue::class, 'variant_id');
+    }
 }
-
 
 
