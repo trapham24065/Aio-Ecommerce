@@ -61,7 +61,7 @@ final class WarehouseProcessor implements ProcessorInterface
                 'postalCode'  => ['nullable', 'string', 'max:100'],
                 'postal_code' => ['nullable', 'string', 'max:100'],
                 'country'     => ['required', 'string', 'max:100'],
-                'status'      => ['required'],
+                'status'      => ['nullable', 'boolean'],
             ];
 
             if ($operation->getMethod() === 'POST') {
@@ -72,7 +72,11 @@ final class WarehouseProcessor implements ProcessorInterface
                 $rules['name'][] = Rule::unique('warehouses')->ignore($warehouseId);
                 $rules['code'][] = Rule::unique('warehouses')->ignore($warehouseId);
             }
-
+            if (!array_key_exists('status', $requestData) || $requestData['status'] === ''
+                || $requestData['status'] === null
+            ) {
+                $requestData['status'] = true;
+            }
             $validator = \Validator::make($requestData, $rules);
 
             if ($validator->fails()) {

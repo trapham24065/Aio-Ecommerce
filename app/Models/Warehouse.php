@@ -60,6 +60,8 @@ class Warehouse extends Model
             'status' => 'boolean',
         ];
 
+    protected $attributes = ['status' => true];
+
     #[Groups(['receipt:detail:read', 'receipt:list', 'warehouse:list', 'warehouse:detail:read'])]
     public function getId()
     {
