@@ -13,10 +13,12 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Http\Requests\StoreInventoryRequest;
 use App\ApiPlatform\State\InventoryProcessor;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\SerializedName;
 
 #[ApiResource(
     operations: [
-        new GetCollection(),
+        new GetCollection(normalizationContext: ['groups' => ['warehouse:list']]),
         new Post(
             input: StoreInventoryRequest::class,
             processor: InventoryProcessor::class
@@ -38,6 +40,25 @@ class Inventory extends Model
     protected $table = 'inventory';
 
     protected $fillable = ['warehouse_id', 'product_variant_sku', 'quantity'];
+
+    #[Groups(['warehouse:detail:read', 'warehouse:list'])]
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    #[Groups(['warehouse:detail:read', 'warehouse:list'])]
+    #[SerializedName('product_variant_sku')]
+    public function getProductVariantSku(): ?string
+    {
+        return $this->product_variant_sku;
+    }
+
+    #[Groups(['warehouse:detail:read', 'warehouse:list'])]
+    public function getQuantity(): ?string
+    {
+        return $this->quantity;
+    }
 
     public function warehouse(): BelongsTo
     {

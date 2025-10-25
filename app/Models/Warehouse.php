@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use App\ApiPlatform\State\GoodsReceiptProvider;
 use App\Http\Requests\StoreWarehouseRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,15 +18,18 @@ use ApiPlatform\Metadata\Get;
 use App\ApiPlatform\State\WarehouseProcessor;
 use App\Dto\WarehouseInput;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\SerializedName;
 
 #[ApiResource(
     operations: [
-        new GetCollection(),
+        new GetCollection(
+            normalizationContext: ['groups' => ['warehouse:list', 'receipt:detail:read']],
+        ),
         new Post(
             input: WarehouseInput::class,
             processor: WarehouseProcessor::class
         ),
-        new Get(),
+        new Get(normalizationContext: ['groups' => ['warehouse:detail:read', 'receipt:detail:read']],),
         new Put(
             input: WarehouseInput::class,
             processor: WarehouseProcessor::class
@@ -56,40 +60,46 @@ class Warehouse extends Model
             'status' => 'boolean',
         ];
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    #[Groups(['receipt:detail:read', 'receipt:list', 'warehouse:list', 'warehouse:detail:read'])]
     public function getId()
     {
         return $this->id;
     }
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    #[Groups(['receipt:detail:read', 'receipt:list', 'warehouse:list', 'warehouse:detail:read'])]
     public function getName()
     {
         return $this->name;
     }
 
-    #[Groups(['receipt:detail:read'])]
+    #[Groups(['receipt:detail:read', 'receipt:list', 'warehouse:list', 'warehouse:detail:read'])]
     public function getCode()
     {
         return $this->code;
     }
 
-    #[Groups(['receipt:detail:read'])]
+    #[Groups(['receipt:detail:read', 'receipt:list', 'warehouse:detail:read'])]
     public function getCity()
     {
         return $this->city;
     }
 
-    #[Groups(['receipt:detail:read'])]
+    #[Groups(['receipt:detail:read', 'receipt:list', 'warehouse:detail:read'])]
     public function getCountry()
     {
         return $this->country;
     }
 
-    #[Groups(['receipt:detail:read'])]
+    #[Groups(['receipt:detail:read', 'receipt:list', 'warehouse:detail:read'])]
     public function getStatus()
     {
         return $this->status;
+    }
+
+    #[Groups(['receipt:detail:read', 'warehouse:detail:read'])]
+    public function getInventory()
+    {
+        return $this->inventory()->get();
     }
 
     public function inventory(): HasMany
