@@ -23,13 +23,26 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
 #[ApiResource(
     operations: [
         new GetCollection(
-            normalizationContext: ['groups' => ['warehouse:list', 'receipt:detail:read']],
+            normalizationContext: [
+                'groups' => [
+                    'warehouse:list',
+                    'receipt:detail:read',
+                    'inventory:detail:read',
+                    'inventory:read',
+                ],
+            ],
         ),
         new Post(
             input: WarehouseInput::class,
             processor: WarehouseProcessor::class
         ),
-        new Get(normalizationContext: ['groups' => ['warehouse:detail:read', 'receipt:detail:read']],),
+        new Get(normalizationContext: [
+            'groups' => [
+                'warehouse:detail:read',
+                'receipt:detail:read',
+                'inventory:detail:read',
+            ],
+        ],),
         new Put(
             input: WarehouseInput::class,
             processor: WarehouseProcessor::class
@@ -62,7 +75,17 @@ class Warehouse extends Model
 
     protected $attributes = ['status' => true];
 
-    #[Groups(['receipt:detail:read', 'receipt:list', 'warehouse:list', 'warehouse:detail:read'])]
+    protected $visible = ['id', 'name', 'code', 'city', 'country', 'status', 'inventory'];
+
+    protected $with = ['inventory'];
+
+    #[Groups([
+        'receipt:detail:read',
+        'receipt:list',
+        'warehouse:list',
+        'warehouse:detail:read',
+        'inventory:detail:read',
+    ])]
     public function getId()
     {
         return $this->id;
@@ -101,7 +124,7 @@ class Warehouse extends Model
     #[Groups(['receipt:detail:read', 'warehouse:detail:read'])]
     public function getInventory()
     {
-        return $this->inventory()->get();
+        return $this->inventory;
     }
 
     public function inventory(): HasMany

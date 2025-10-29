@@ -54,6 +54,7 @@ class GoodsReceipt extends Model
             'warehouse_id',
             'supplier_id',
             'code',
+            'status',
             'notes',
             'receipt_date',
             'user_id',
@@ -66,7 +67,7 @@ class GoodsReceipt extends Model
 
     protected $with = ['items', 'warehouse', 'supplier', 'user'];
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    #[Groups(['receipt:detail:read', 'receipt:list', 'items:detail:read'])]
     public function getId()
     {
         return $this->id;
@@ -83,14 +84,14 @@ class GoodsReceipt extends Model
     #[SerializedName('warehouse_id')]
     public function getWarehouseId()
     {
-        return $this->getAttribute('warehouse_id');
+        return $this->warehouse;
     }
 
     #[Groups(['receipt:detail:read', 'receipt:list'])]
     #[SerializedName('supplier_id')]
     public function getSupplierId()
     {
-        return $this->getAttribute('supplier_id');
+        return $this->supplier;
     }
 
     #[Groups(['receipt:detail:read', 'receipt:list'])]
@@ -111,6 +112,34 @@ class GoodsReceipt extends Model
         return $this->status;
     }
 
+    #[Groups(['receipt:detail:read'])]
+    #[SerializedName('warehouse')]
+    public function getWarehouse()
+    {
+        return $this->warehouse;
+    }
+
+    #[Groups(['receipt:detail:read'])]
+    #[SerializedName('supplier')]
+    public function getSupplier()
+    {
+        return $this->supplier;
+    }
+
+    #[Groups(['receipt:detail:read'])]
+    #[SerializedName('user')]
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    #[Groups(['receipt:detail:read'])]
+    #[SerializedName('items')]
+    public function getItems()
+    {
+        return $this->items;
+    }
+
     public function items(): HasMany|GoodsReceipt
     {
         return $this->hasMany(GoodsReceiptItem::class);
@@ -129,39 +158,6 @@ class GoodsReceipt extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
-    #[SerializedName('items')]
-    public function getItems()
-    {
-        $this->loadMissing('items.productVariant');
-
-        return $this->items->map(function ($item) {
-            return [
-                'id'       => $item->id,
-                'sku'      => $item->product_variant_sku ?? optional($item->productVariant)->sku,
-                'quantity' => $item->quantity,
-            ];
-        });
-    }
-
-    #[Groups(['receipt:detail:read'])]
-    public function getWarehouse()
-    {
-        return $this->warehouse;
-    }
-
-    #[Groups(['receipt:detail:read'])]
-    public function getSupplier()
-    {
-        return $this->supplier;
-    }
-
-    #[Groups(['receipt:detail:read'])]
-    public function getUser()
-    {
-        return $this->user;
     }
 
     protected static function booted(): void

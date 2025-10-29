@@ -21,12 +21,15 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
         new Post(),
         new Put(),
         new Delete(),
-    ]
+    ],
+    normalizationContext: ['groups' => ['items:read', 'items:detail:read', 'receipt:list', 'receipt:detail:read']],
 )]
 class GoodsReceiptItem extends Model
 {
 
     use HasFactory;
+
+    protected $table = 'goods_receipt_items';
 
     public $timestamps = false;
 
@@ -37,26 +40,21 @@ class GoodsReceiptItem extends Model
             'quantity',
         ];
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
-    public function getId()
-    {
-        return $this->id;
-    }
+    protected $visible = ['id', 'product_variant_sku', 'quantity'];
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
-    public function getQuantity()
-    {
-        return $this->quantity;
-    }
+    protected $with = ['productVariant'];
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
-    #[SerializedName('product_variant_sku')]
-    public function getProductVariantSku(): ?string
-    {
-        return $this->product_variant_sku;
-    }
+    #[Groups(['receipt:detail:read', 'receipt:list', 'items:read', 'items:detail:read'])]
+    protected $id;
 
-    #[Groups(['receipt:detail:read', 'receipt:list'])]
+    #[Groups(['receipt:detail:read', 'receipt:list', 'items:read', 'items:detail:read'])]
+    protected $quantity;
+
+    #[Groups(['receipt:detail:read', 'receipt:list', 'items:read', 'items:detail:read'])]
+    protected $product_variant_sku;
+
+    #[Groups(['receipt:detail:read', 'items:read', 'items:detail:read'])]
+    #[SerializedName('product_variant')]
     public function getProductVariant()
     {
         return $this->productVariant;
