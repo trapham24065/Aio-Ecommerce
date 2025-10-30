@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\ApiPlatform\State\GoodsReceiptProvider;
 use App\Dto\GoodsReceiptInput;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,14 +21,12 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
     operations: [
         new GetCollection(
             normalizationContext: ['groups' => ['receipt:list']],
-            provider: GoodsReceiptProvider::class
         ),
         new Get(
             normalizationContext: ['groups' => ['receipt:detail:read']],
-            provider: GoodsReceiptProvider::class
         ),
         new Post(
-            normalizationContext: ['groups' => ['receipt:detail:read']],
+            denormalizationContext: ['groups' => ['receipt:write']],
             input: GoodsReceiptInput::class,
             processor: GoodsReceiptProcessor::class
         ),

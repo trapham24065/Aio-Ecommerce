@@ -2,14 +2,11 @@
 
 namespace App\Models;
 
-use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use App\ApiPlatform\State\GoodsReceiptProvider;
-use App\Http\Requests\StoreWarehouseRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Notifications\Notification;
@@ -18,7 +15,6 @@ use ApiPlatform\Metadata\Get;
 use App\ApiPlatform\State\WarehouseProcessor;
 use App\Dto\WarehouseInput;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\Annotation\SerializedName;
 
 #[ApiResource(
     operations: [
