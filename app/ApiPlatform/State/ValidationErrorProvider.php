@@ -2,57 +2,33 @@
 
 namespace App\ApiPlatform\State;
 
-use ApiPlatform\Metadata\Operation;
-use ApiPlatform\State\ApiResource\Error;
-use ApiPlatform\State\ProviderInterface;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\MessageBag;
+use Illuminate\Http\JsonResponse;
 
-final class ValidationErrorProvider implements ProviderInterface
+class ValidationErrorProvider
 {
 
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
+    public static function toJsonResponse(MessageBag $errors): JsonResponse
     {
-        $request = $context['request'];
-        if (!$request || !($exception = $request->attributes->get('exception'))) {
-            throw new \RuntimeException();
-        }
+        $violations = [];
+        $detailMessages = [];
 
-        $status = $operation->getStatus() ?? 422;
-
-        if ($exception instanceof ValidationException) {
-            $errors = $exception->errors();
-            $violations = [];
-            $detailMessages = [];
-
-            foreach ($errors as $field => $messages) {
-                foreach ($messages as $message) {
-                    $violations[] = [
-                        'propertyPath' => $field,
-                        'message'      => $message,
-                    ];
-                    $detailMessages[] = "{$field}: {$message}";
-                }
+        foreach ($errors->toArray() as $field => $messages) {
+            foreach ($messages as $message) {
+                $violations[] = [
+                    'propertyPath' => $field,
+                    'message'      => $message,
+                ];
+                $detailMessages[] = "{$field}: {$message}";
             }
-
-            $response = [
-                'title'      => 'An error occurred',
-                'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
-                'violations' => $violations,
-                'status'     => $status,
-            ];
-
-            return $response;
         }
 
-        $error = Error::createFromException($exception, $status);
-
-        if ($status >= 500) {
-            $error->setDetail('Something went wrong');
-        }
-
-        return $error;
+        return new JsonResponse([
+            'title'      => 'An error occurred',
+            'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
+            'violations' => $violations,
+            'status'     => 422,
+        ], 422);
     }
 
 }
-
-

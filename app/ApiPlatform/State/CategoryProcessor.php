@@ -66,28 +66,7 @@ final class CategoryProcessor implements ProcessorInterface
             $validator = \Validator::make($requestData, $rules);
 
             if ($validator->fails()) {
-                $errors = $validator->errors();
-                $violations = [];
-                $detailMessages = [];
-
-                foreach ($errors->toArray() as $field => $messages) {
-                    foreach ($messages as $message) {
-                        $violations[] = [
-                            'propertyPath' => $field,
-                            'message'      => $message,
-                        ];
-                        $detailMessages[] = "{$field}: {$message}";
-                    }
-                }
-
-                $errorResponse = [
-                    'title'      => 'An error occurred',
-                    'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
-                    'violations' => $violations,
-                    'status'     => 422,
-                ];
-
-                return new JsonResponse($errorResponse, 422);
+                return ValidationErrorProvider::toJsonResponse($validator->errors());
             }
 
             $validated = $validator->validated();

@@ -8,11 +8,9 @@ use ApiPlatform\Laravel\Eloquent\State\PersistProcessor;
 use App\Models\GoodsReceipt;
 use App\Models\Inventory;
 use App\Models\InventoryTransaction;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
-final class GoodsReceiptProcessor implements ProcessorInterface
+final readonly class GoodsReceiptProcessor implements ProcessorInterface
 {
 
     public function __construct(
@@ -39,35 +37,13 @@ final class GoodsReceiptProcessor implements ProcessorInterface
         $validator = \Validator::make($requestData, $rules);
 
         if ($validator->fails()) {
-            $errors = $validator->errors();
-            $violations = [];
-            $detailMessages = [];
-
-            foreach ($errors->toArray() as $field => $messages) {
-                foreach ($messages as $message) {
-                    $violations[] = [
-                        'propertyPath' => $field,
-                        'message'      => $message,
-                    ];
-                    $detailMessages[] = "{$field}: {$message}";
-                }
-            }
-
-            $errorResponse = [
-                'title'      => 'An error occurred',
-                'detail'     => 'Validation errors: '.implode('; ', $detailMessages),
-                'violations' => $violations,
-                'status'     => 422,
-            ];
-
-            return new JsonResponse($errorResponse, 422);
+            return ValidationErrorProvider::toJsonResponse($validator->errors());
         }
-        
+
         $validated = $validator->validated();
 
         if ($operation->getMethod() === 'POST') {
             return DB::transaction(function () use ($validated, $operation, $uriVariables, $context) {
-                // Tạo goods receipt
                 $receipt = new GoodsReceipt([
                     'warehouse_id' => $validated['warehouse_id'],
                     'supplier_id'  => $validated['supplier_id'],
@@ -77,15 +53,12 @@ final class GoodsReceiptProcessor implements ProcessorInterface
 
                 $result = $this->persist->process($receipt, $operation, $uriVariables, $context);
 
-                // Tạo items và cập nhật inventory
                 foreach ($validated['items'] as $itemData) {
-                    // Tạo goods receipt item
                     $receipt->items()->create([
                         'product_variant_sku' => $itemData['product_variant_sku'],
                         'quantity'            => $itemData['quantity'],
                     ]);
 
-                    // Cập nhật inventory
                     $inventory = Inventory::firstOrCreate(
                         [
                             'warehouse_id'        => $receipt->warehouse_id,
@@ -96,7 +69,6 @@ final class GoodsReceiptProcessor implements ProcessorInterface
                     $inventory->quantity += $itemData['quantity'];
                     $inventory->save();
 
-                    // Tạo inventory transaction
                     InventoryTransaction::create([
                         'warehouse_id'        => $receipt->warehouse_id,
                         'product_variant_sku' => $itemData['product_variant_sku'],
